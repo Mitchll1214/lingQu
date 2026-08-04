@@ -39,3 +39,5 @@ app:
   aes-key: ${AES_KEY:lingqu-aes-key-01}
   default-admin-user: ${DEFAULT_ADMIN_USER:admin}
   default-admin-pass: ${DEFAULT_ADMIN_PASS:123456}
+  # Executor 地址（在线调试转发用，单容器部署时 localhost 直连）
+  executor-url: ${EXECUTOR_BASE_URL:http://localhost:${EXECUTOR_PORT:8080}}

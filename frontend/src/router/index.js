@@ -10,7 +10,10 @@ const routes = [
       { path: 'dashboard', component: () => import('../views/Dashboard.vue'), meta: { title: '系统概览' } },
       { path: 'projects', component: () => import('../views/Projects.vue'), meta: { title: '项目管理' } },
       { path: 'datasources', component: () => import('../views/Datasources.vue'), meta: { title: '数据源管理' } },
-      { path: 'apis', component: () => import('../views/Apis.vue'), meta: { title: '接口管理' } }
+      { path: 'apis', component: () => import('../views/Apis.vue'), meta: { title: '接口管理' } },
+      { path: 'docs', component: () => import('../views/ApiDocs.vue'), meta: { title: '接口文档' } },
+      { path: 'debug', component: () => import('../views/ApiDebug.vue'), meta: { title: '在线调试' } },
+      { path: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '调用日志' } }
     ]
   }
 ]

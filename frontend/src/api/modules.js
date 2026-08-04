@@ -41,3 +41,11 @@ export const tokenApi = {
   create: (data) => request.post('/api/admin/tokens', data),
   revoke: (id) => request.delete(`/api/admin/tokens/${id}`)
 }
+
+export const logApi = {
+  page: (params) => request.get('/api/admin/logs', { params })
+}
+
+export const debugApi = {
+  execute: (data) => request.post('/api/admin/debug/execute', data)
+}

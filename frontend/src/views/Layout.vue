@@ -15,6 +15,15 @@
         <el-menu-item index="/apis">
           <el-icon><Connection /></el-icon><span>接口管理</span>
         </el-menu-item>
+        <el-menu-item index="/docs">
+          <el-icon><Document /></el-icon><span>接口文档</span>
+        </el-menu-item>
+        <el-menu-item index="/debug">
+          <el-icon><Monitor /></el-icon><span>在线调试</span>
+        </el-menu-item>
+        <el-menu-item index="/logs">
+          <el-icon><Tickets /></el-icon><span>调用日志</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -36,7 +45,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { Odometer, Folder, Coin, Connection } from '@element-plus/icons-vue'
+import { Odometer, Folder, Coin, Connection, Document, Monitor, Tickets } from '@element-plus/icons-vue'
 import { authApi } from '../api/modules'
 
 const route = useRoute()

@@ -6,6 +6,7 @@ import com.lingqu.executor.cache.ConfigCache;
 import com.lingqu.executor.common.BizException;
 import com.lingqu.executor.engine.GroovyExecutor;
 import com.lingqu.executor.engine.RateLimiterManager;
+import com.lingqu.executor.engine.ResponseFormatter;
 import com.lingqu.executor.engine.SqlExecutor;
 import com.lingqu.executor.entity.Api;
 import com.lingqu.executor.entity.Project;
@@ -36,17 +37,20 @@ public class ApiDispatchController {
     private final SqlExecutor sqlExecutor;
     private final GroovyExecutor groovyExecutor;
     private final RateLimiterManager rateLimiterManager;
+    private final ResponseFormatter responseFormatter;
     private final CallLogger callLogger;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ApiDispatchController(AuthService authService, ConfigCache configCache,
                                  SqlExecutor sqlExecutor, GroovyExecutor groovyExecutor,
-                                 RateLimiterManager rateLimiterManager, CallLogger callLogger) {
+                                 RateLimiterManager rateLimiterManager,
+                                 ResponseFormatter responseFormatter, CallLogger callLogger) {
         this.authService = authService;
         this.configCache = configCache;
         this.sqlExecutor = sqlExecutor;
         this.groovyExecutor = groovyExecutor;
         this.rateLimiterManager = rateLimiterManager;
+        this.responseFormatter = responseFormatter;
         this.callLogger = callLogger;
     }
 
@@ -94,6 +98,8 @@ public class ApiDispatchController {
             } else {
                 data = sqlExecutor.execute(project.getDatasourceId(), api, params);
             }
+            // 出参映射（需求 3.3.8）：字段重命名/格式化
+            data = responseFormatter.format(api, data);
             responseBody = toJson(data);
             statusCode = 200;
             return data;

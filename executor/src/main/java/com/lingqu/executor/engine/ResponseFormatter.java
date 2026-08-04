@@ -2,12 +2,12 @@ package com.lingqu.executor.engine;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lingqu.executor.common.BizException;
 import com.lingqu.executor.entity.Api;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,8 @@ public class ResponseFormatter {
 
     /**
      * 对 SQL/Groovy 的执行结果应用出参映射。
-     * 仅处理 List&lt;Map&gt; 形态的结果；DML 的 affectedRows 等结构不转换。
+     * 仅处理 List 形态的结果；DML 的 affectedRows 等结构不转换。
+     * 配置了 response_format 但内容非法时直接报错（避免静默返回全量字段造成数据泄露）。
      */
     public Object format(Api api, Object data) {
         if (data == null || !(data instanceof List)) {
@@ -36,17 +37,23 @@ public class ResponseFormatter {
         if (!StringUtils.hasText(fmt)) {
             return data;
         }
-        List<Map<String, Object>> mappings = parse(fmt);
-        if (mappings.isEmpty()) {
+        List<Map<String, Object>> mappings;
+        try {
+            mappings = MAPPER.readValue(fmt, new TypeReference<List<Map<String, Object>>>() {
+            });
+        } catch (Exception e) {
+            throw new BizException(500, "出参映射配置不是合法 JSON，请检查接口「" + api.getApiName() + "」的 response_format");
+        }
+        if (mappings == null || mappings.isEmpty()) {
             return data;
         }
+
         List<?> rows = (List<?>) data;
-        List<Map<String, Object>> result = new ArrayList<>(rows.size());
+        List<Object> result = new ArrayList<>(rows.size());
         for (Object row : rows) {
+            // 非 Map 行（如标量列表）原样保留
             if (!(row instanceof Map)) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> cast = (Map<String, Object>) row;
-                result.add(cast);
+                result.add(row);
                 continue;
             }
             Map<?, ?> src = (Map<?, ?>) row;
@@ -59,14 +66,5 @@ public class ResponseFormatter {
             result.add(out);
         }
         return result;
-    }
-
-    private List<Map<String, Object>> parse(String fmt) {
-        try {
-            return MAPPER.readValue(fmt, new TypeReference<List<Map<String, Object>>>() {
-            });
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
     }
 }

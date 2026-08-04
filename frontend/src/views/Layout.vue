@@ -24,6 +24,9 @@
         <el-menu-item index="/logs">
           <el-icon><Tickets /></el-icon><span>调用日志</span>
         </el-menu-item>
+        <el-menu-item index="/alerts">
+          <el-icon><Bell /></el-icon><span>告警规则</span>
+        </el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>
@@ -45,7 +48,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { Odometer, Folder, Coin, Connection, Document, Monitor, Tickets } from '@element-plus/icons-vue'
+import { Odometer, Folder, Coin, Connection, Document, Monitor, Tickets, Bell } from '@element-plus/icons-vue'
 import { authApi } from '../api/modules'
 
 const route = useRoute()

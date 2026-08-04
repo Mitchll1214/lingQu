@@ -15,22 +15,39 @@ services:
     volumes:
       - dbdata:/var/lib/mysql
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
 
   lingqu:
     build: .
     container_name: lingqu
     depends_on:
-      - config-db
+      config-db:
+        condition: service_healthy
     environment:
+      # 配置库（必需）
       DB_TYPE: mysql
       DB_HOST: config-db
       DB_PORT: "3306"
       DB_NAME: lingqu
       DB_USER: lingqu
       DB_PASSWORD: lingqu123
+      # 可选
       # DEFAULT_ADMIN_USER: admin
       # DEFAULT_ADMIN_PASS: "123456"
-      # AES_KEY: lingqu-aes-key-01
+      # AES_KEY: lingqu-aes-key-01        # 生产必改，Manager/Executor 保持一致
+      # MANAGER_PORT: "8081"
+      # EXECUTOR_PORT: "8080"
+      # 告警邮件（可选，不配置则跳过发送）
+      # SMTP_HOST: smtp.example.com
+      # SMTP_PORT: "465"
+      # SMTP_USERNAME: alert@example.com
+      # SMTP_PASSWORD: yourpassword
+      # ALERT_MAIL_FROM: alert@example.com
+      # ALERT_MAIL_TO: ops@example.com
     ports:
       - "8080:8080"   # 业务 API
       - "8081:8081"   # 管理后台

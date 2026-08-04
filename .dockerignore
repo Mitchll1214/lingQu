@@ -1,0 +1,10 @@
+# 构建上下文排除项
+.git
+**/target
+**/node_modules
+frontend/dist
+.idea
+.vscode
+*.log
+*.iml
+.DS_Store

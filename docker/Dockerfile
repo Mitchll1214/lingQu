@@ -16,10 +16,10 @@ FROM maven:3.9-eclipse-temurin-11 AS build
 WORKDIR /build
 COPY manager/pom.xml manager/pom.xml
 COPY executor/pom.xml executor/pom.xml
-RUN mkdir -p manager/src/main/resources/static
-COPY --from=frontend /fe/dist/ manager/src/main/resources/static/
 COPY manager/src/ manager/src/
 COPY executor/src/ executor/src/
+# 用前端 Stage 构建的最新产物覆盖 static（顺序必须在 COPY manager/src 之后）
+COPY --from=frontend /fe/dist/ manager/src/main/resources/static/
 RUN cd manager && mvn -q -DskipTests package \
     && cd ../executor && mvn -q -DskipTests package
 

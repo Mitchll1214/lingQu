@@ -13,7 +13,8 @@ const routes = [
       { path: 'apis', component: () => import('../views/Apis.vue'), meta: { title: '接口管理' } },
       { path: 'docs', component: () => import('../views/ApiDocs.vue'), meta: { title: '接口文档' } },
       { path: 'debug', component: () => import('../views/ApiDebug.vue'), meta: { title: '在线调试' } },
-      { path: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '调用日志' } }
+      { path: 'logs', component: () => import('../views/Logs.vue'), meta: { title: '调用日志' } },
+      { path: 'alerts', component: () => import('../views/Alerts.vue'), meta: { title: '告警规则' } }
     ]
   }
 ]

@@ -49,3 +49,11 @@ export const logApi = {
 export const debugApi = {
   execute: (data) => request.post('/api/admin/debug/execute', data)
 }
+
+export const alertApi = {
+  page: (params) => request.get('/api/admin/alerts', { params }),
+  create: (data) => request.post('/api/admin/alerts', data),
+  update: (id, data) => request.put(`/api/admin/alerts/${id}`, data),
+  updateStatus: (id, status) => request.put(`/api/admin/alerts/${id}/status`, { status }),
+  remove: (id) => request.delete(`/api/admin/alerts/${id}`)
+}

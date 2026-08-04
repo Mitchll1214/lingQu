@@ -80,25 +80,63 @@ cd frontend; npm install; npm run dev   # http://localhost:5173
 
 ### 方式二：单容器部署（需求 4.1）
 
-```bash
-# 1. 构建镜像
-docker build -t lingqu .
+**前置条件**：已安装 Docker（Linux 建议 20.10+；macOS/Windows 用 Docker Desktop），且存在一个可访问的外部 MySQL 5.7+ 或 PostgreSQL 12+ 配置库。
 
-# 2. 运行（需先有外部 MySQL/PG）
+**步骤 1 — 构建镜像**（在项目根目录，首次构建需下载依赖，约 5-15 分钟）：
+
+```bash
+docker build -t lingqu .
+```
+
+**步骤 2 — 创建配置库**（以 MySQL 为例，也可使用你自己的库）：
+
+```sql
+CREATE DATABASE lingqu DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+> 首次启动时 Manager 会自动执行 Flyway 建表并创建默认管理员，无需手工建表。
+
+**步骤 3 — 运行容器**（把环境变量换成你的配置库信息）：
+
+```bash
 docker run -d --name lingqu -p 8080:8080 -p 8081:8081 \
-  -e DB_TYPE=mysql -e DB_HOST=192.168.1.10 -e DB_PORT=3306 \
-  -e DB_NAME=lingqu -e DB_USER=lingqu -e DB_PASSWORD=lingqu123 \
-  -e DEFAULT_ADMIN_USER=admin -e DEFAULT_ADMIN_PASS=123456 \
+  -e DB_TYPE=mysql \
+  -e DB_HOST=192.168.1.10 \
+  -e DB_PORT=3306 \
+  -e DB_NAME=lingqu \
+  -e DB_USER=lingqu \
+  -e DB_PASSWORD='你的密码' \
+  -e AES_KEY='换成随机16位以上字符串' \
+  -e DEFAULT_ADMIN_PASS='admin初始密码' \
+  # 可选：告警邮件
+  -e SMTP_HOST=smtp.example.com -e SMTP_PORT=465 \
+  -e SMTP_USERNAME=alert@example.com -e SMTP_PASSWORD='xxx' \
+  -e ALERT_MAIL_FROM=alert@example.com -e ALERT_MAIL_TO=ops@example.com \
   lingqu
 ```
 
-或使用 `docker/docker-compose.yml`（自带 MySQL 配置库，一条命令联调）：
+或使用内置 compose 一键联调（自带 MySQL 配置库）：
 
 ```bash
 cd docker && docker compose up -d --build
 ```
 
-启动后访问：管理后台 <http://localhost:8081>（admin / 123456）。
+**步骤 4 — 验证与访问**：
+
+```bash
+docker logs -f lingqu          # 查看启动日志（Manager/Executor 两个进程）
+curl http://localhost:8081/actuator/health   # 管理端健康
+curl http://localhost:8080/actuator/health   # 业务端健康
+```
+
+- 管理后台：<http://localhost:8081>（admin / 你设置的密码）
+- 业务 API：<http://localhost:8080>（端口 8080 不暴露给外网更安全，仅供应用服务调用）
+
+**运维提示**：
+- 容器内 Supervisor 同时拉起 Manager（8081）和 Executor（8080），任一进程退出会自动重启。
+- 配置数据全部存外部配置库，`docker rm` 容器不影响数据；升级只需重新 `docker build` + `docker run`。
+- 停止/重启：`docker stop lingqu && docker start lingqu`。
+- `AES_KEY` 一旦用于加密数据即不可更改，否则历史密码/Token 无法解密；请妥善保存。
 
 ## 环境变量（需求 4.3）
 
@@ -111,6 +149,9 @@ cd docker && docker compose up -d --build
 | `JVM_OPTS_MANAGER` / `JVM_OPTS_EXECUTOR` | ❌ | `-Xms128m -Xmx256m` | 各进程 JVM 参数 |
 | `DEFAULT_ADMIN_USER` / `DEFAULT_ADMIN_PASS` | ❌ | admin / 123456 | 首次启动自动创建的管理员 |
 | `AES_KEY` | ❌ | `lingqu-aes-key-01` | AES 加密密钥（生产必改，Manager/Executor 必须一致） |
+| `EXECUTOR_BASE_URL` | ❌ | `http://localhost:8080` | Manager 在线调试转发目标（单容器默认即可） |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | ❌ | 空 | 告警邮件 SMTP 通道（不配置则跳过发送） |
+| `ALERT_MAIL_FROM` / `ALERT_MAIL_TO` | ❌ | 空 | 告警邮件发件人 / 默认收件人 |
 
 ## 业务 API 调用（需求 7）
 
@@ -145,12 +186,12 @@ curl -X POST http://localhost:8080/api/order/getDetail \
 |------|------------------------------|
 | 3.1 项目管理 | ✅ 创建/列表/编辑/启停/软删除/数据源绑定（编码与路由前缀全局唯一校验） |
 | 3.2 数据源管理 | ✅ CRUD + 连接测试 + 密码 AES 加密存储；内置 MySQL/PG 驱动，Oracle/达梦等预留驱动类配置 |
-| 3.3 接口管理 | ✅ CRUD + 草稿/上线/下线三态 + 动态 SQL + Groovy 脚本；编辑已上线接口自动回草稿需重新上线；出参映射（字段重命名，format 格式化预留） |
+| 3.3 接口管理 | ✅ CRUD + 草稿/上线/下线三态 + 动态 SQL + Groovy 脚本；编辑已上线接口自动回草稿需重新上线；出参映射（字段重命名 + `format` 日期格式化） |
 | 3.4 项目鉴权 | ✅ none/token/apikey + Token 生成/列表/吊销/过期；路由首段匹配；Token 加密存储、严格绑定项目 |
 | 3.5 调用日志 | ✅ 接口级开关 + 全字段记录（存配置库）+ 日志查询页面（项目/接口/时间/状态筛选、详情查看） |
 | 3.6 限流控制 | ✅ Guava 本地令牌桶 + 接口级 QPS + 30s 定期刷新（重启不丢失） |
 | 3.7 在线文档/调试 | ✅ 在线文档（按项目展示路径/方法/入参/出参/curl 示例）+ 在线调试（走真实链路转发 Executor） |
-| 3.8 系统概览 | ✅ 基础统计 + 项目调用量排行（告警配置下一阶段） |
+| 3.8 系统概览/告警 | ✅ Dashboard（统计卡片 + 近 7 日调用趋势 + 项目/接口 TOP 排行 + 今日错误率）+ 告警邮件通道（超时/错误率规则、防抖、SMTP 发送） |
 | 4.1 单容器部署 | ✅ Dockerfile + Supervisor + entrypoint（需在真实 Docker 环境验证） |
 | 4.2 外部配置库 | ✅ Flyway `{vendor}` 双方言自动建表 + 首次启动创建默认管理员 |
 | 4.5 安全性 | ✅ 参数化查询（禁 `${}`）、AES 加密、BCrypt 密码哈希、Token 过期与项目隔离 |
@@ -174,12 +215,10 @@ curl -X POST http://localhost:8080/api/order/getDetail \
 
 ## 已知限制（本轮）
 
-1. **告警邮件通道、Dashboard 调用趋势完善** 为下一阶段（P3）。
+1. **Groovy 脚本沙箱、出参映射非日期类型格式化** 为后续增强项。
 2. Oracle/SQLServer/达梦 等数据源：驱动未内置，需手工填写驱动类名并自行添加驱动 jar。
 3. Executor 配置刷新为 30s 轮询（简单可靠；需求 3.6.4 的"简单通知机制"后续可优化为主动推送）。
-4. 出参映射的 `format` 字段（日期格式化等）当前预留未实现，仅支持字段重命名。
-5. Docker 相关文件已就绪，需在有 Docker 的环境执行 `docker compose up` 实测。
-6. Token 明文仅生成时显示一次；`AES_KEY` 生产环境务必修改，且 Manager/Executor 保持一致。
+4. Token 明文仅生成时显示一次；`AES_KEY` 生产环境务必修改，且 Manager/Executor 保持一致。
 
 ## 安全说明（重要）
 

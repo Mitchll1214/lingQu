@@ -8,6 +8,18 @@ spring:
     enabled: false
   jackson:
     time-zone: GMT+8
+  mail:
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:25}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 mybatis-plus:
   configuration:
@@ -35,3 +47,8 @@ app:
   aes-key: ${AES_KEY:lingqu-aes-key-01}
   # 配置刷新周期（秒）：项目/接口/Token/限流/数据源配置变更后的生效间隔
   config-refresh-seconds: 30
+  # 告警邮件（需求 3.8.3）
+  alert-mail-from: ${ALERT_MAIL_FROM:}
+  alert-mail-default-to: ${ALERT_MAIL_TO:}
+  # 告警检测周期（秒）
+  alert-check-seconds: 60

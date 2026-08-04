@@ -2,6 +2,7 @@ package com.lingqu.manager.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.lingqu.manager.common.Dialect;
 import com.lingqu.manager.entity.Api;
 import com.lingqu.manager.entity.ApiLog;
 import com.lingqu.manager.entity.Datasource;
@@ -59,6 +60,30 @@ public class DashboardService {
         // 数据源健康状态
         List<Datasource> datasources = datasourceMapper.selectList(null);
         result.put("datasourceHealthy", (int) datasources.stream().filter(d -> d.getStatus() != null && d.getStatus() == 1).count());
+
+        // 近 7 日调用趋势（按天聚合，方言差异处理）
+        String dateExpr = Dialect.isPostgresql() ? "CAST(created_at AS DATE)" : "DATE(created_at)";
+        QueryWrapper<ApiLog> trendQw = new QueryWrapper<>();
+        trendQw.select(dateExpr + " AS day", "COUNT(*) AS cnt")
+                .ge("created_at", LocalDate.now().minusDays(6).atStartOfDay())
+                .groupBy("day")
+                .orderByAsc("day");
+        result.put("trend", apiLogMapper.selectMaps(trendQw));
+
+        // 接口调用量 TOP5
+        QueryWrapper<ApiLog> topApiQw = new QueryWrapper<>();
+        topApiQw.select("COALESCE(api_name, '-') AS api_name", "COUNT(*) AS cnt")
+                .groupBy("api_name")
+                .orderByDesc("cnt")
+                .last("LIMIT 5");
+        result.put("topApis", apiLogMapper.selectMaps(topApiQw));
+
+        // 今日错误率
+        QueryWrapper<ApiLog> errQw = new QueryWrapper<>();
+        errQw.ge("created_at", todayStart).and(w -> w.lt("status_code", 200).or().ge("status_code", 300));
+        Long todayErrors = apiLogMapper.selectCount(errQw);
+        long todayTotalCount = ((Number) result.get("logToday")).longValue();
+        result.put("todayErrorRate", todayTotalCount == 0 ? 0 : Math.round(todayErrors * 10000.0 / todayTotalCount) / 100.0);
         return result;
     }
 }

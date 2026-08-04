@@ -3,18 +3,19 @@
 # 使用方式：
 #   1. 复制配置模板并填写你的外部数据库连接信息：
 #        cp .env.example .env
-#   2. 构建并启动：
+#   2. 构建并启动（在 docker/ 目录下执行即可，构建上下文自动指向项目根目录）：
 #        docker compose up -d --build
 #   3. 查看日志：
 #        docker logs -f lingqu
 #
 # 提示：DB_HOST 不要填 localhost（容器内 localhost 指容器自身），
 #       请填宿主机可访问的地址；Docker Desktop 可用 host.docker.internal。
-version: "3.8"
-
 services:
   lingqu:
-    build: .
+    # 构建上下文指向项目根目录（Dockerfile 中的 COPY 路径相对根目录）
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: lingqu
     environment:
       # ---- 外部配置库（必填，缺少时 compose 会报错提示）----

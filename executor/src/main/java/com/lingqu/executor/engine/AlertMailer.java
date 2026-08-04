@@ -36,28 +36,38 @@ public class AlertMailer {
         return StringUtils.hasText(smtpHost);
     }
 
-    public void send(String subject, String text, String toOverride) {
+    public boolean send(String subject, String text, String toOverride) {
         if (!isConfigured()) {
             log.warn("SMTP 未配置（SMTP_HOST），跳过告警邮件发送：{}", subject);
-            return;
+            return false;
         }
         String to = StringUtils.hasText(toOverride) ? toOverride : defaultTo;
         if (!StringUtils.hasText(to)) {
             log.warn("未配置收件人（ALERT_MAIL_TO 或规则 mailTo），跳过告警邮件发送：{}", subject);
-            return;
+            return false;
         }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             if (StringUtils.hasText(from)) {
                 message.setFrom(from);
             }
-            message.setTo(to.split(","));
+            String[] receivers = java.util.Arrays.stream(to.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toArray(String[]::new);
+            if (receivers.length == 0) {
+                log.warn("收件人列表为空，跳过告警邮件发送：{}", subject);
+                return false;
+            }
+            message.setTo(receivers);
             message.setSubject(subject);
             message.setText(text);
             mailSender.send(message);
             log.info("告警邮件已发送：{} → {}", subject, to);
+            return true;
         } catch (Exception e) {
             log.warn("告警邮件发送失败：{}，原因：{}", subject, e.getMessage());
+            return false;
         }
     }
 }

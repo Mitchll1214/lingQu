@@ -62,8 +62,10 @@ public class AlertConfigService {
     public void update(AlertConfig config) {
         get(config.getId());
         validate(config);
+        // 忽略前端回传的时间戳与上次告警时间，避免覆盖数据库真实值
         config.setCreatedAt(null);
         config.setUpdatedAt(null);
+        config.setLastAlertAt(null);
         alertConfigMapper.updateById(config);
     }
 

@@ -17,3 +17,6 @@ frontend/dist/
 *.log
 *.tmp
 .DS_Store
+
+# 构建产物压缩包
+*.zip

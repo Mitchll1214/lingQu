@@ -18,6 +18,8 @@ export JVM_OPTS_EXECUTOR="${JVM_OPTS_EXECUTOR:--Xms128m -Xmx256m}"
 export AES_KEY="${AES_KEY:-lingqu-aes-key-01}"
 export DEFAULT_ADMIN_USER="${DEFAULT_ADMIN_USER:-admin}"
 export DEFAULT_ADMIN_PASS="${DEFAULT_ADMIN_PASS:-123456}"
+# 时区：保证调用日志/告警统计与业务时区一致（默认东八区）
+export TZ="${TZ:-Asia/Shanghai}"
 
 # 3. 等待外部配置库就绪（最多 60 秒）
 echo "等待配置库 $DB_HOST:$DB_PORT 就绪..."

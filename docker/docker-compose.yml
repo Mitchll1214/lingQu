@@ -41,13 +41,14 @@ services:
       # AES_KEY: lingqu-aes-key-01        # 生产必改，Manager/Executor 保持一致
       # MANAGER_PORT: "8081"
       # EXECUTOR_PORT: "8080"
-      # 告警邮件（可选，不配置则跳过发送）
+      # 告警邮件（可选，不配置则跳过发送；465 端口需 SSL，当前仅支持 STARTTLS 的 25/587）
       # SMTP_HOST: smtp.example.com
-      # SMTP_PORT: "465"
+      # SMTP_PORT: "587"
       # SMTP_USERNAME: alert@example.com
       # SMTP_PASSWORD: yourpassword
       # ALERT_MAIL_FROM: alert@example.com
       # ALERT_MAIL_TO: ops@example.com
+      # TZ: Asia/Shanghai
     ports:
       - "8080:8080"   # 业务 API
       - "8081:8081"   # 管理后台

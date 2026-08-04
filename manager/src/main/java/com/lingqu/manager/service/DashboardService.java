@@ -66,7 +66,8 @@ public class DashboardService {
         QueryWrapper<ApiLog> trendQw = new QueryWrapper<>();
         trendQw.select(dateExpr + " AS day", "COUNT(*) AS cnt")
                 .ge("created_at", LocalDate.now().minusDays(6).atStartOfDay())
-                .groupBy("day")
+                // PG 不允许 GROUP BY 引用输出列别名，必须用表达式本身
+                .groupBy(dateExpr)
                 .orderByAsc("day");
         result.put("trend", apiLogMapper.selectMaps(trendQw));
 

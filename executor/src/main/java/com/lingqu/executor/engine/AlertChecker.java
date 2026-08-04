@@ -129,13 +129,15 @@ public class AlertChecker {
         }
         body.append("\n请及时处理。");
 
-        alertMailer.send(subject, body.toString(), rule.getMailTo());
+        boolean sent = alertMailer.send(subject, body.toString(), rule.getMailTo());
 
-        // 更新防抖时间
-        AlertConfig patch = new AlertConfig();
-        patch.setId(rule.getId());
-        patch.setLastAlertAt(LocalDateTime.now());
-        alertConfigMapper.updateById(patch);
+        // 仅发送成功才更新防抖时间，避免告警丢失后静默期内无法重试
+        if (sent) {
+            AlertConfig patch = new AlertConfig();
+            patch.setId(rule.getId());
+            patch.setLastAlertAt(LocalDateTime.now());
+            alertConfigMapper.updateById(patch);
+        }
     }
 
     private int window(AlertConfig rule) {

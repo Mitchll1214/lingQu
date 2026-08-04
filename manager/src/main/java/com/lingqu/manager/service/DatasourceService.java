@@ -38,7 +38,9 @@ public class DatasourceService {
             qw.like(Datasource::getName, keyword).or().like(Datasource::getJdbcUrl, keyword);
         }
         qw.orderByDesc(Datasource::getUpdatedAt);
-        return datasourceMapper.selectPage(new Page<>(page, size), qw);
+        IPage<Datasource> result = datasourceMapper.selectPage(new Page<>(page, size), qw);
+        result.getRecords().forEach(d -> d.setPassword(null));
+        return result;
     }
 
     public Datasource get(String id) {
@@ -51,6 +53,9 @@ public class DatasourceService {
 
     public void create(Datasource ds) {
         validateBase(ds);
+        if (!StringUtils.hasText(ds.getPassword())) {
+            throw new BizException("密码不能为空");
+        }
         ds.setId(IdUtil.uuid());
         if (ds.getStatus() == null) {
             ds.setStatus(1);
@@ -68,6 +73,9 @@ public class DatasourceService {
         } else {
             ds.setPassword(null);
         }
+        // 清空前端回传的时间戳，避免覆盖数据库真实值（否则 Executor 连接池无法感知变更）
+        ds.setCreatedAt(null);
+        ds.setUpdatedAt(null);
         datasourceMapper.updateById(ds);
     }
 
@@ -103,8 +111,10 @@ public class DatasourceService {
     }
 
     public List<Datasource> options() {
-        return datasourceMapper.selectList(new LambdaQueryWrapper<Datasource>()
+        List<Datasource> list = datasourceMapper.selectList(new LambdaQueryWrapper<Datasource>()
                 .orderByAsc(Datasource::getName));
+        list.forEach(d -> d.setPassword(null));
+        return list;
     }
 
     private void validateBase(Datasource ds) {

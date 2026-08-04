@@ -181,6 +181,13 @@ curl -X POST http://localhost:8080/api/order/getDetail \
 5. Docker 相关文件已就绪，需在有 Docker 的环境执行 `docker compose up` 实测。
 6. Token 明文仅生成时显示一次；`AES_KEY` 生产环境务必修改，且 Manager/Executor 保持一致。
 
+## 安全说明（重要）
+
+- **Groovy 脚本 = 管理员级代码执行能力**（可调用 `sql` 对象执行任意参数化 SQL）。请仅授予可信管理员使用，并在生产环境做好管理员账号管理。Groovy 脚本不应接收未经校验的外部输入拼接 SQL（脚本内请使用 `sql.query(sql, params)` 参数化形式）。
+- SQL 一律使用 `#{}` 参数化，`${}` 在上线时与执行时双重拦截；`X-Forwarded-For` 用于日志记录客户端 IP，生产环境若直接暴露需自行评估伪造风险。
+- 默认密钥/默认口令（`lingqu-aes-key-01` / `admin:123456`）仅用于开箱即用，**生产环境必须通过环境变量修改**。
+- 管理端登录采用 Session 校验，建议生产环境启用 HTTPS（当前 session cookie 未强制 `Secure`）。
+
 ## 技术栈
 
 Spring Boot 2.7.18（Java 11）· MyBatis-Plus 3.5 · Flyway 8 · Vue 3 + Element Plus + Vite · Guava RateLimiter · Groovy · HikariCP · Supervisor

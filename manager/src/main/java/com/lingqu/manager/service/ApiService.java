@@ -74,6 +74,9 @@ public class ApiService {
         if (old.getStatus() != null && old.getStatus() == Api.STATUS_ONLINE) {
             api.setStatus(Api.STATUS_DRAFT);
         }
+        // 清空前端回传的时间戳，避免覆盖数据库真实值（否则 Executor 缓存无法感知变更）
+        api.setCreatedAt(null);
+        api.setUpdatedAt(null);
         apiMapper.updateById(api);
     }
 

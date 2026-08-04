@@ -69,6 +69,9 @@ public class ProjectService {
         // 更换数据源：校验新数据源存在且可用（进行中调用校验后续版本实现）
         checkDatasource(project.getDatasourceId());
         // 编辑项目本身不改变状态（接口级重新上线逻辑在 ApiService）
+        // 清空前端回传的时间戳，避免覆盖数据库真实值（否则 Executor 缓存无法感知变更）
+        project.setCreatedAt(null);
+        project.setUpdatedAt(null);
         projectMapper.updateById(project);
     }
 

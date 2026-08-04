@@ -64,6 +64,8 @@ public class SqlExecutor {
                     return query(ps);
                 }
                 int affected = ps.executeUpdate();
+                // openSession(false) 关闭了自动提交，DML 必须显式提交
+                session.commit();
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("affectedRows", affected);
                 return result;
@@ -91,6 +93,11 @@ public class SqlExecutor {
 
     private MappedStatement build(SqlSessionFactory factory, Api api) {
         Configuration configuration = factory.getConfiguration();
+        String sql = api.getSqlContent();
+        // 纵深防御：无论配置来自何处，一律拒绝 ${} 字符串拼接（需求 4.5.1）
+        if (sql != null && sql.contains("${")) {
+            throw new BizException(500, "SQL 包含非法的 ${} 拼接，已拒绝执行（请使用 #{} 参数化）");
+        }
         SqlSource sqlSource;
         if (isDynamicScript(api.getSqlContent())) {
             // 含 MyBatis 动态标签：按 XML 脚本解析

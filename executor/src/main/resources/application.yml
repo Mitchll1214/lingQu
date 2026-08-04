@@ -37,6 +37,10 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # 未配置 SMTP 时禁用邮件健康检查（否则每 5s 刷连接失败日志且 health 变 DOWN）
+    mail:
+      enabled: false
 
 logging:
   level:

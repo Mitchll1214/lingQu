@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 # 灵渠数据接口平台 - 容器启动脚本
+# 注意：必须用 bash 解释（/dev/tcp 为 bash 特性，dash/sh 不支持）
 set -e
 
 # 1. 校验必需环境变量
@@ -24,7 +25,8 @@ export TZ="${TZ:-Asia/Shanghai}"
 # 3. 等待外部配置库就绪（最多 60 秒）
 echo "等待配置库 $DB_HOST:$DB_PORT 就绪..."
 i=0
-until (echo > /dev/tcp/"$DB_HOST"/"$DB_PORT") 2>/dev/null; do
+# timeout 3 防止网络黑洞时挂死（bash /dev/tcp 无超时上限）
+until timeout 3 bash -c 'echo > /dev/tcp/"$1"/"$2"' _ "$DB_HOST" "$DB_PORT" 2>/dev/null; do
   i=$((i + 1))
   if [ "$i" -gt 60 ]; then
     echo "错误：配置库连接超时（$DB_HOST:$DB_PORT）"

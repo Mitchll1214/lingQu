@@ -44,7 +44,8 @@ services:
       TZ: ${TZ:-Asia/Shanghai}
 
     ports:
-      - "8080:8080"   # 业务 API
-      - "8081:8081"   # 管理后台
+      # 端口跟随 .env 中的 MANAGER_PORT / EXECUTOR_PORT（默认 8081 / 8080）
+      - "${EXECUTOR_PORT:-8080}:${EXECUTOR_PORT:-8080}"   # 业务 API
+      - "${MANAGER_PORT:-8081}:${MANAGER_PORT:-8081}"     # 管理后台
 
     restart: unless-stopped

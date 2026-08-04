@@ -1,57 +1,49 @@
-# 灵渠数据接口平台 - 本地一键联调（MySQL 配置库 + 单容器）
+# 灵渠数据接口平台 - 单容器部署（配置库使用外部 MySQL/PostgreSQL，容器内不自建数据库）
+#
+# 使用方式：
+#   1. 复制配置模板并填写你的外部数据库连接信息：
+#        cp .env.example .env
+#   2. 构建并启动：
+#        docker compose up -d --build
+#   3. 查看日志：
+#        docker logs -f lingqu
+#
+# 提示：DB_HOST 不要填 localhost（容器内 localhost 指容器自身），
+#       请填宿主机可访问的地址；Docker Desktop 可用 host.docker.internal。
 version: "3.8"
 
 services:
-  config-db:
-    image: mysql:5.7
-    container_name: lingqu-config-db
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: lingqu
-      MYSQL_USER: lingqu
-      MYSQL_PASSWORD: lingqu123
-    ports:
-      - "3306:3306"
-    volumes:
-      - dbdata:/var/lib/mysql
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-
   lingqu:
     build: .
     container_name: lingqu
-    depends_on:
-      config-db:
-        condition: service_healthy
     environment:
-      # 配置库（必需）
-      DB_TYPE: mysql
-      DB_HOST: config-db
-      DB_PORT: "3306"
-      DB_NAME: lingqu
-      DB_USER: lingqu
-      DB_PASSWORD: lingqu123
-      # 可选
-      # DEFAULT_ADMIN_USER: admin
-      # DEFAULT_ADMIN_PASS: "123456"
-      # AES_KEY: lingqu-aes-key-01        # 生产必改，Manager/Executor 保持一致
-      # MANAGER_PORT: "8081"
-      # EXECUTOR_PORT: "8080"
-      # 告警邮件（可选，不配置则跳过发送；465 端口需 SSL，当前仅支持 STARTTLS 的 25/587）
-      # SMTP_HOST: smtp.example.com
-      # SMTP_PORT: "587"
-      # SMTP_USERNAME: alert@example.com
-      # SMTP_PASSWORD: yourpassword
-      # ALERT_MAIL_FROM: alert@example.com
-      # ALERT_MAIL_TO: ops@example.com
-      # TZ: Asia/Shanghai
+      # ---- 外部配置库（必填，缺少时 compose 会报错提示）----
+      DB_TYPE: ${DB_TYPE:?请在 .env 中配置 DB_TYPE（mysql 或 postgresql）}
+      DB_HOST: ${DB_HOST:?请在 .env 中配置 DB_HOST（外部数据库地址）}
+      DB_PORT: ${DB_PORT:?请在 .env 中配置 DB_PORT}
+      DB_NAME: ${DB_NAME:?请在 .env 中配置 DB_NAME}
+      DB_USER: ${DB_USER:?请在 .env 中配置 DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD:?请在 .env 中配置 DB_PASSWORD}
+
+      # ---- 可选（均有默认值）----
+      AES_KEY: ${AES_KEY:-lingqu-aes-key-01}
+      DEFAULT_ADMIN_USER: ${DEFAULT_ADMIN_USER:-admin}
+      DEFAULT_ADMIN_PASS: ${DEFAULT_ADMIN_PASS:-123456}
+      JVM_OPTS_MANAGER: ${JVM_OPTS_MANAGER:--Xms128m -Xmx256m}
+      JVM_OPTS_EXECUTOR: ${JVM_OPTS_EXECUTOR:--Xms128m -Xmx256m}
+
+      # ---- 告警邮件（可选，不配置则跳过发送）----
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-25}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ALERT_MAIL_FROM: ${ALERT_MAIL_FROM:-}
+      ALERT_MAIL_TO: ${ALERT_MAIL_TO:-}
+
+      TZ: ${TZ:-Asia/Shanghai}
+
     ports:
       - "8080:8080"   # 业务 API
       - "8081:8081"   # 管理后台
 
-volumes:
-  dbdata:
+    restart: unless-stopped

@@ -109,17 +109,23 @@ docker run -d --name lingqu -p 8080:8080 -p 8081:8081 \
   -e AES_KEY='换成随机16位以上字符串' \
   -e DEFAULT_ADMIN_PASS='admin初始密码' \
   # 可选：告警邮件
-  -e SMTP_HOST=smtp.example.com -e SMTP_PORT=465 \
+  -e SMTP_HOST=smtp.example.com -e SMTP_PORT=587 \
   -e SMTP_USERNAME=alert@example.com -e SMTP_PASSWORD='xxx' \
   -e ALERT_MAIL_FROM=alert@example.com -e ALERT_MAIL_TO=ops@example.com \
   lingqu
 ```
 
-或使用内置 compose 一键联调（自带 MySQL 配置库）：
+或使用 compose 部署（**容器不自建数据库**，直接连接你的外部配置库，配置走 `.env` 文件）：
 
 ```bash
-cd docker && docker compose up -d --build
+cd docker
+cp .env.example .env      # 填写外部数据库连接信息（DB_HOST 不要填 localhost）
+docker compose up -d --build
 ```
+
+> 说明：`docker-compose.yml` 只含应用容器，不含数据库服务；`DB_*` 等连接信息
+> 全部由同目录 `.env` 文件提供，缺少必填项时 compose 会报错提示，避免配置遗漏。
+> `.env` 含数据库密码等敏感信息，已被 `.gitignore` 排除，请勿提交到代码仓库。
 
 **步骤 4 — 验证与访问**：
 

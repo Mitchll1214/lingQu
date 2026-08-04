@@ -1,0 +1,39 @@
+# 灵渠数据接口平台 - 本地一键联调（MySQL 配置库 + 单容器）
+version: "3.8"
+
+services:
+  config-db:
+    image: mysql:5.7
+    container_name: lingqu-config-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: lingqu
+      MYSQL_USER: lingqu
+      MYSQL_PASSWORD: lingqu123
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  lingqu:
+    build: .
+    container_name: lingqu
+    depends_on:
+      - config-db
+    environment:
+      DB_TYPE: mysql
+      DB_HOST: config-db
+      DB_PORT: "3306"
+      DB_NAME: lingqu
+      DB_USER: lingqu
+      DB_PASSWORD: lingqu123
+      # DEFAULT_ADMIN_USER: admin
+      # DEFAULT_ADMIN_PASS: "123456"
+      # AES_KEY: lingqu-aes-key-01
+    ports:
+      - "8080:8080"   # 业务 API
+      - "8081:8081"   # 管理后台
+
+volumes:
+  dbdata:

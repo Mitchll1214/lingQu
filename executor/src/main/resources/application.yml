@@ -1,0 +1,37 @@
+server:
+  port: ${EXECUTOR_PORT:8080}
+
+spring:
+  application:
+    name: lingqu-executor
+  flyway:
+    enabled: false
+  jackson:
+    time-zone: GMT+8
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    banner: false
+    db-config:
+      id-type: input
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.lingqu: info
+
+app:
+  # AES 密钥必须与 Manager 一致，否则无法解密数据源密码 / Token
+  aes-key: ${AES_KEY:lingqu-aes-key-01}
+  # 配置刷新周期（秒）：项目/接口/Token/限流/数据源配置变更后的生效间隔
+  config-refresh-seconds: 30

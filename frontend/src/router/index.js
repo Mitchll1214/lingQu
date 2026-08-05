@@ -47,4 +47,11 @@ router.beforeEach((to, from, next) => {
   next()
 })
 
+// 页面标题跟随路由
+router.afterEach((to) => {
+  document.title = to.meta?.title
+    ? `${to.meta.title} · 灵渠数据接口平台`
+    : '灵渠 · 数据接口平台'
+})
+
 export default router

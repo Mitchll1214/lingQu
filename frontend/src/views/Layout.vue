@@ -45,6 +45,15 @@
       <el-main class="main">
         <router-view />
       </el-main>
+      <el-footer class="footer">
+        <span>© {{ year }} 灵渠 · 数据接口平台</span>
+        <span class="footer-right">
+          开发者：Mitchll ·
+          <el-link type="primary" href="https://github.com/Mitchll1214/lingQu" target="_blank" :underline="false">
+            GitHub 仓库
+          </el-link>
+        </span>
+      </el-footer>
     </el-container>
 
     <!-- 修改密码 -->
@@ -74,6 +83,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Odometer, Folder, Coin, Connection, Document, Monitor, Tickets, Bell, User } from '@element-plus/icons-vue'
 import { authApi, userApi } from '../api/modules'
+
+const year = new Date().getFullYear()
 
 const route = useRoute()
 const router = useRouter()
@@ -135,4 +146,23 @@ async function doLogout() {
 .user-box { display: flex; align-items: center; gap: 10px; }
 .username { color: #606266; font-size: 14px; }
 .main { padding: 16px; overflow: auto; }
+.footer {
+  height: auto;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  background: #fff;
+  border-top: 1px solid var(--lq-border, #e4e9f2);
+  font-size: 12px;
+  color: #6b7a90;
+}
+.footer-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 </style>

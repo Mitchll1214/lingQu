@@ -1,12 +1,17 @@
 <template>
   <div>
     <el-row :gutter="16">
-      <el-col :span="6" v-for="card in cards" :key="card.label">
-        <el-card shadow="hover">
-          <div class="stat-item">
-            <div class="stat-label">{{ card.label }}</div>
-            <div class="stat-value">{{ card.value }}</div>
-            <div v-if="card.sub" class="stat-sub">{{ card.sub }}</div>
+      <el-col :xs="24" :sm="12" :lg="6" v-for="card in cards" :key="card.label">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-body">
+            <div class="stat-icon">
+              <el-icon :size="22"><component :is="card.icon" /></el-icon>
+            </div>
+            <div class="stat-meta">
+              <div class="stat-label">{{ card.label }}</div>
+              <div class="stat-value">{{ card.value }}</div>
+              <div v-if="card.sub" class="stat-sub">{{ card.sub }}</div>
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -26,7 +31,7 @@
     </el-card>
 
     <el-row :gutter="16" style="margin-top: 16px">
-      <el-col :span="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>项目调用量排行（TOP 5）</template>
           <el-table :data="topProjects" empty-text="暂无调用日志" size="small">
@@ -35,7 +40,7 @@
           </el-table>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>接口调用量排行（TOP 5）</template>
           <el-table :data="topApis" empty-text="暂无调用日志" size="small">
@@ -49,7 +54,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, markRaw } from 'vue'
+import { Folder, Connection, Coin, Odometer } from '@element-plus/icons-vue'
 import { dashboardApi } from '../api/modules'
 
 const cards = ref([])
@@ -68,13 +74,14 @@ const shortDay = (day) => (day ? String(day).slice(5) : '-')
 onMounted(async () => {
   const stats = await dashboardApi.stats()
   cards.value = [
-    { label: '项目总数', value: stats.projectTotal ?? 0 },
-    { label: '接口总数', value: stats.apiTotal ?? 0 },
-    { label: '数据源总数', value: stats.datasourceTotal ?? 0 },
+    { label: '项目总数', value: stats.projectTotal ?? 0, icon: markRaw(Folder) },
+    { label: '接口总数', value: stats.apiTotal ?? 0, icon: markRaw(Connection) },
+    { label: '数据源总数', value: stats.datasourceTotal ?? 0, icon: markRaw(Coin) },
     {
       label: '今日调用',
       value: stats.logToday ?? 0,
-      sub: `错误率 ${stats.todayErrorRate ?? 0}%`
+      sub: `错误率 ${stats.todayErrorRate ?? 0}%`,
+      icon: markRaw(Odometer)
     }
   ]
   topProjects.value = stats.topProjects || []
@@ -84,10 +91,27 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.stat-item { text-align: center; padding: 8px 0; }
-.stat-label { color: #909399; font-size: 13px; margin-bottom: 8px; }
-.stat-value { font-size: 28px; font-weight: 600; color: #1f3b73; }
-.stat-sub { color: #909399; font-size: 12px; margin-top: 6px; }
+.stat-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 4px;
+}
+.stat-icon {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f3b73;
+  background: #e8edf5;
+}
+.stat-meta { min-width: 0; }
+.stat-label { color: #6b7a90; font-size: 13px; margin-bottom: 4px; }
+.stat-value { font-size: 26px; font-weight: 700; color: #1f3b73; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stat-sub { color: #909399; font-size: 12px; margin-top: 3px; }
 .trend {
   display: flex; align-items: flex-end; justify-content: space-around;
   height: 190px; padding: 10px 20px;

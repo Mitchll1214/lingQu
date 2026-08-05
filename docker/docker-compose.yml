@@ -30,6 +30,9 @@ services:
       AES_KEY: ${AES_KEY:-lingqu-aes-key-01}
       DEFAULT_ADMIN_USER: ${DEFAULT_ADMIN_USER:-admin}
       DEFAULT_ADMIN_PASS: ${DEFAULT_ADMIN_PASS:-123456}
+      # 应用监听端口（与下方 ports 映射保持一致，改这里即改对外端口）
+      MANAGER_PORT: ${MANAGER_PORT:-8081}
+      EXECUTOR_PORT: ${EXECUTOR_PORT:-8080}
       JVM_OPTS_MANAGER: ${JVM_OPTS_MANAGER:--Xms128m -Xmx256m}
       JVM_OPTS_EXECUTOR: ${JVM_OPTS_EXECUTOR:--Xms128m -Xmx256m}
 

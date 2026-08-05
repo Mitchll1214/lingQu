@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360"
+     role="img" aria-labelledby="lq-hero-title lq-hero-desc">
+  <title id="lq-hero-title">灵渠 · 数据接口平台</title>
+  <desc id="lq-hero-desc">将 SQL 转化为 RESTful API 的低代码数据接口平台：多项目管理、项目级鉴权、限流、全量调用日志、单容器部署。</desc>
+
+  <defs>
+    <linearGradient id="hero-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16294f"/>
+      <stop offset="1" stop-color="#0f1b33"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="360" rx="24" fill="url(#hero-bg)"/>
+
+  <!-- 细网格（弱化，仅纹理） -->
+  <g stroke="#ffffff" stroke-width="1" opacity="0.035">
+    <line x1="0" y1="80"  x2="1200" y2="80"/>
+    <line x1="0" y1="160" x2="1200" y2="160"/>
+    <line x1="0" y1="240" x2="1200" y2="240"/>
+    <line x1="0" y1="320" x2="1200" y2="320"/>
+  </g>
+
+  <!-- ============ 左侧标题区 ============ -->
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="56" y="86" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+          font-size="18" letter-spacing="3" fill="#8fc0ff">SQL → RESTFUL API · 低代码平台</text>
+
+    <text x="56" y="152" font-size="56" font-weight="700" fill="#ffffff">灵渠 · 数据接口平台</text>
+
+    <text x="56" y="202" font-size="21" fill="#a9b7cd">将 SQL 发布为安全、可治理的 RESTful 接口，</text>
+    <text x="56" y="234" font-size="21" fill="#a9b7cd">无需编写一行后端代码。</text>
+  </g>
+
+  <!-- 元信息（mono） -->
+  <text x="56" y="278" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+        font-size="16" letter-spacing="1" fill="#8a9dbd">V1.0.0 · SPRING BOOT 2.7 · VUE 3 · MYSQL / POSTGRESQL · 单容器部署</text>
+
+  <!-- 能力 chips -->
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <g>
+      <rect x="56" y="296" width="150" height="34" rx="17" fill="#1f3b73"/>
+      <text x="131" y="318" font-size="15" text-anchor="middle" fill="#cfd8e6">项目级鉴权</text>
+    </g>
+    <g>
+      <rect x="216" y="296" width="126" height="34" rx="17" fill="#1f3b73"/>
+      <text x="279" y="318" font-size="15" text-anchor="middle" fill="#cfd8e6">QPS 限流</text>
+    </g>
+    <g>
+      <rect x="352" y="296" width="126" height="34" rx="17" fill="#1f3b73"/>
+      <text x="415" y="318" font-size="15" text-anchor="middle" fill="#cfd8e6">全量日志</text>
+    </g>
+    <g>
+      <rect x="488" y="296" width="148" height="34" rx="17" fill="#1f3b73"/>
+      <text x="562" y="318" font-size="15" text-anchor="middle" fill="#cfd8e6">告警邮件</text>
+    </g>
+  </g>
+
+  <!-- ============ 右侧分水 motif（灵渠渠首意象） ============ -->
+  <g transform="translate(620 30)">
+    <!-- 上游主渠汇入 -->
+    <path d="M0 60 L150 60" stroke="#5b76a3" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M0 170 L150 170" stroke="#5b76a3" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <!-- 人字分水坝：两渠合流 → 一分 → 两翼分流 -->
+    <path d="M150 60 L258 60 L330 20 L402 60 L470 60"
+          stroke="#3f7fd4" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M150 170 L258 170 L330 210 L402 170 L470 170"
+          stroke="#2d5aa8" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- 两翼延伸至画布边缘 -->
+    <path d="M470 60 L540 60" stroke="#3f7fd4" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M470 170 L540 170" stroke="#2d5aa8" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- 数据流节点 -->
+    <circle cx="330" cy="20"  r="7" fill="#8fc0ff"/>
+    <circle cx="330" cy="210" r="5" fill="#5b76a3"/>
+    <circle cx="150" cy="60"  r="4" fill="#5b76a3"/>
+    <circle cx="150" cy="170" r="4" fill="#5b76a3"/>
+    <circle cx="540" cy="60"  r="4" fill="#8fc0ff"/>
+    <circle cx="540" cy="170" r="3" fill="#5b76a3"/>
+    <!-- 输出标签 -->
+    <rect x="270" y="238" width="120" height="26" rx="13" fill="#1f3b73" stroke="#3f7fd4" stroke-width="1"/>
+    <text x="330" y="256" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+          font-size="14" text-anchor="middle" fill="#cfd8e6">RESTful API</text>
+  </g>
+</svg>

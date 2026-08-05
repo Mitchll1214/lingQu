@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520"
+     role="img" aria-labelledby="lq-arch-title lq-arch-desc">
+  <title id="lq-arch-title">灵渠平台架构</title>
+  <desc id="lq-arch-desc">外部调用方与管理浏览器通过 HTTP 访问容器内的 Executor 与 Manager；Supervisor 管理两个进程；Manager 与 Executor 通过 JDBC 访问外部配置库，Executor 连接用户配置的业务数据源执行 SQL。</desc>
+
+  <defs>
+    <linearGradient id="arch-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16294f"/>
+      <stop offset="1" stop-color="#0f1b33"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#3f7fd4"/>
+    </marker>
+    <marker id="arrow-grey" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#8a9dbd"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="520" rx="24" fill="url(#arch-bg)"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+
+    <!-- ============ 请求方 ============ -->
+    <rect x="64" y="70" width="220" height="92" rx="14" fill="#16294f" stroke="#3f7fd4" stroke-width="1.5"/>
+    <text x="174" y="106" font-size="20" font-weight="600" fill="#ffffff" text-anchor="middle">外部调用方</text>
+    <text x="174" y="136" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16"
+          fill="#8a9dbd" text-anchor="middle">HTTP · BEARER / API KEY</text>
+
+    <rect x="64" y="196" width="220" height="92" rx="14" fill="#16294f" stroke="#3f7fd4" stroke-width="1.5"/>
+    <text x="174" y="232" font-size="20" font-weight="600" fill="#ffffff" text-anchor="middle">管理浏览器</text>
+    <text x="174" y="262" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16"
+          fill="#8a9dbd" text-anchor="middle">WEB 管理界面</text>
+
+    <!-- ============ 单容器 / Supervisor ============ -->
+    <rect x="340" y="48" width="560" height="330" rx="18" fill="#0f1b33"
+          stroke="#5b76a3" stroke-width="1.5" stroke-dasharray="8 6"/>
+    <text x="356" y="74" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+          font-size="16" letter-spacing="2" fill="#8a9dbd">DOCKER 单容器 · SUPERVISOR 进程管理</text>
+
+    <!-- Manager -->
+    <rect x="380" y="92" width="480" height="132" rx="14" fill="#1f3b73" stroke="#5b76a3" stroke-width="1.5"/>
+    <text x="404" y="124" font-size="20" font-weight="600" fill="#ffffff">Manager · 管理后台</text>
+    <text x="700" y="124" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8fc0ff">:8081</text>
+    <text x="404" y="156" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#cfd8e6">· 内嵌 Vue3 前端 UI（登录 / 概览 / 管理页面）</text>
+    <text x="404" y="184" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#cfd8e6">· 项目 / 数据源 / 接口 / Token / 日志 / 用户管理</text>
+    <text x="404" y="212" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#cfd8e6">· Flyway 自动建表 · 默认管理员初始化</text>
+
+    <!-- Executor -->
+    <rect x="380" y="248" width="480" height="120" rx="14" fill="#1f3b73" stroke="#5b76a3" stroke-width="1.5"/>
+    <text x="404" y="280" font-size="20" font-weight="600" fill="#ffffff">Executor · API 执行引擎</text>
+    <text x="720" y="280" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8fc0ff">:8080</text>
+    <text x="404" y="312" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#cfd8e6">· 路由识别 · 项目鉴权（none / token / apikey）</text>
+    <text x="404" y="340" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#cfd8e6">· 令牌桶限流 · MyBatis 动态 SQL / Groovy 脚本</text>
+    <text x="404" y="358" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#cfd8e6">· 调用日志写入（全量保留）</text>
+
+    <!-- ============ 数据层 ============ -->
+    <rect x="64" y="424" width="460" height="76" rx="14" fill="#16294f" stroke="#5b76a3" stroke-width="1.5"/>
+    <text x="294" y="458" font-size="19" font-weight="600" fill="#ffffff" text-anchor="middle">外部配置库</text>
+    <text x="294" y="484" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16"
+          fill="#8a9dbd" text-anchor="middle">MYSQL 5.7+ / POSTGRESQL 12+ · 项目·接口·Token·日志·用户</text>
+
+    <rect x="576" y="424" width="560" height="76" rx="14" fill="#16294f" stroke="#5b76a3" stroke-width="1.5"/>
+    <text x="856" y="458" font-size="19" font-weight="600" fill="#ffffff" text-anchor="middle">业务数据源（用户配置）</text>
+    <text x="856" y="484" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="16"
+          fill="#8a9dbd" text-anchor="middle">MYSQL / POSTGRESQL / ORACLE / 达梦 等 · 由项目绑定</text>
+  </g>
+
+  <!-- ============ 连线 ============ -->
+  <g fill="none">
+    <!-- Client → Executor（HTTP） -->
+    <path d="M284 116 L312 116 L312 308 L380 308" stroke="#3f7fd4" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="318" y="104" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8fc0ff">HTTP 请求</text>
+
+    <!-- Browser → Manager（HTTP） -->
+    <path d="M284 242 L312 242 L312 158 L380 158" stroke="#3f7fd4" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="318" y="230" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8fc0ff">HTTP</text>
+
+    <!-- Manager → 配置库（JDBC） -->
+    <path d="M520 224 L520 424" stroke="#8a9dbd" stroke-width="2" marker-end="url(#arrow-grey)"/>
+    <text x="530" y="330" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8a9dbd">JDBC</text>
+
+    <!-- Executor → 配置库（JDBC 读写 + 30s 轮询） -->
+    <path d="M460 368 L460 424" stroke="#8a9dbd" stroke-width="2" marker-end="url(#arrow-grey)"/>
+    <text x="470" y="398" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8a9dbd">JDBC</text>
+
+    <!-- Executor → 业务数据源（JDBC） -->
+    <path d="M760 368 L760 424" stroke="#8a9dbd" stroke-width="2" marker-end="url(#arrow-grey)"/>
+    <text x="770" y="398" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#8a9dbd">JDBC</text>
+  </g>
+
+  <!-- 30s 轮询说明 -->
+  <text x="340" y="414" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+        font-size="14" fill="#8a9dbd">配置 30s 轮询刷新 · 日志写入配置库</text>
+</svg>

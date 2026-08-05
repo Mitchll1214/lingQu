@@ -187,18 +187,23 @@
         </el-form-item>
 
         <el-row :gutter="12">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="日志开关">
               <el-switch v-model="logEnabled" active-value="1" inactive-value="0" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="QPS 限制">
               <el-input-number v-model="form.rateLimitQps" :min="0" :max="100000" :precision="2" />
-              <span style="margin-left: 6px; color: #909399">0=不限</span>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
+            <el-form-item label="版本号">
+              <el-input v-model="form.version" placeholder="如 v1 / v1.2.0" maxlength="20" />
+              <span style="margin-left: 6px; color: #909399; font-size: 12px">手工维护，上线不自动升级</span>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
             <el-form-item label="状态">
               <el-tag :type="statusTag(form.status)">{{ statusText(form.status) }}</el-tag>
               <span v-if="form.id && form.status === 1" style="margin-left: 6px; color: #e6a23c; font-size: 12px">编辑后需重新上线</span>
@@ -294,6 +299,7 @@ function openCreate() {
   form.status = 0
   form.logEnabled = 0
   form.rateLimitQps = 0
+  form.version = 'v1'
   logEnabled.value = '0'
   paramRows.value = []
   formatRows.value = []

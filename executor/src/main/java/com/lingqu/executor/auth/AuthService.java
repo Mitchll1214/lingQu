@@ -22,29 +22,39 @@ public class AuthService {
     }
 
     /**
-     * 从完整请求路径中提取第一段作为项目 route_prefix 并查找项目。
-     * 如 /api/order/getDetail → 前缀 /api/order。
+     * 从完整请求路径中匹配项目 route_prefix（最长前缀优先）。
+     * 如 /api/order/getDetail，route_prefix=/api/order 时命中，接口路径为 /getDetail。
+     * 支持多段前缀（如 /api/test），并校验路径段边界（/api 不会误匹配 /apixxx）。
      */
     public Project resolveProject(String fullPath) {
         if (fullPath == null || !fullPath.startsWith("/")) {
             return null;
         }
-        int idx = fullPath.indexOf('/', 1);
-        String prefix = idx > 0 ? fullPath.substring(0, idx) : fullPath;
-        return configCache.findProject(prefix);
+        Project best = null;
+        int bestLen = -1;
+        for (Project p : configCache.allProjects()) {
+            String prefix = p.getRoutePrefix();
+            if (prefix == null || prefix.isEmpty() || prefix.charAt(0) != '/') {
+                continue;
+            }
+            if (fullPath.startsWith(prefix)
+                    && (fullPath.length() == prefix.length() || fullPath.charAt(prefix.length()) == '/')) {
+                if (prefix.length() > bestLen) {
+                    best = p;
+                    bestLen = prefix.length();
+                }
+            }
+        }
+        return best;
     }
 
-    /** 提取接口路径（前缀之后的部分），如 /api/order/getDetail → /getDetail */
-    public String resolveApiPath(String fullPath) {
-        if (fullPath == null) {
+    /** 提取接口路径（匹配到的前缀之后的部分），如 /api/order/getDetail → /getDetail */
+    public String resolveApiPath(Project project, String fullPath) {
+        if (project == null || project.getRoutePrefix() == null || fullPath == null) {
             return null;
         }
-        int idx = fullPath.indexOf('/', 1);
-        if (idx < 0) {
-            return null;
-        }
-        String rest = fullPath.substring(idx);
-        return rest.isEmpty() ? null : rest;
+        String rest = fullPath.substring(project.getRoutePrefix().length());
+        return rest.startsWith("/") && !rest.equals("/") ? rest : null;
     }
 
     /** 校验项目存在且启用；不存在/禁用统一返回 404 避免泄露信息 */

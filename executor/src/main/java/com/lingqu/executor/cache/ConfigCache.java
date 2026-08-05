@@ -88,6 +88,11 @@ public class ConfigCache {
         return projectByPrefix.get(routePrefix);
     }
 
+    /** 全部项目（供路由最长前缀匹配） */
+    public java.util.Collection<Project> allProjects() {
+        return projectByPrefix.values();
+    }
+
     public Api findApi(String projectId, String apiPath) {
         return apiByKey.get(projectId + "|" + apiPath);
     }

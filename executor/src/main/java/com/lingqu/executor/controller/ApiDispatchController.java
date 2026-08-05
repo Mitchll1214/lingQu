@@ -70,7 +70,7 @@ public class ApiDispatchController {
             project = authService.resolveProject(fullPath);
             authService.checkProject(project);
 
-            String apiPath = authService.resolveApiPath(fullPath);
+            String apiPath = authService.resolveApiPath(project, fullPath);
             api = configCache.findApi(project.getId(), apiPath);
             if (api == null || !request.getMethod().equalsIgnoreCase(api.getMethod())) {
                 throw new BizException(404, "接口不存在");

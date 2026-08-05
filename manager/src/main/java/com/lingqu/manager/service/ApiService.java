@@ -108,7 +108,7 @@ public class ApiService {
             Api patch = new Api();
             patch.setId(id);
             patch.setStatus(Api.STATUS_ONLINE);
-            patch.setVersion(nextVersion(api.getVersion()));
+            // 版本号由用户在编辑时手工维护，上线不再自动递增
             apiMapper.updateById(patch);
         } else if (target == Api.STATUS_OFFLINE) {
             if (api.getStatus() == null || api.getStatus() != Api.STATUS_ONLINE) {
@@ -155,6 +155,9 @@ public class ApiService {
         if (!"sql".equals(api.getSqlType()) && !"groovy".equals(api.getSqlType())) {
             throw new BizException("脚本类型必须为 sql 或 groovy");
         }
+        if (!StringUtils.hasText(api.getVersion())) {
+            api.setVersion("v1");
+        }
         if (api.getLogEnabled() == null) {
             api.setLogEnabled(0);
         }
@@ -170,18 +173,6 @@ public class ApiService {
                 .ne(StringUtils.hasText(excludeId), Api::getId, excludeId));
         if (count != null && count > 0) {
             throw new BizException("该项目下已存在路径：" + apiPath);
-        }
-    }
-
-    private String nextVersion(String version) {
-        if (!StringUtils.hasText(version) || !version.startsWith("v")) {
-            return "v1";
-        }
-        try {
-            int n = Integer.parseInt(version.substring(1)) + 1;
-            return "v" + n;
-        } catch (NumberFormatException e) {
-            return "v" + System.currentTimeMillis() % 100000;
         }
     }
 }

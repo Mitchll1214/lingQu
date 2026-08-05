@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.lingqu.manager.common.Result;
 import com.lingqu.manager.entity.Datasource;
 import com.lingqu.manager.service.DatasourceService;
+import com.lingqu.manager.service.PermService;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,25 +26,30 @@ import java.util.Map;
 public class DatasourceController {
 
     private final DatasourceService datasourceService;
+    private final PermService permService;
 
-    public DatasourceController(DatasourceService datasourceService) {
+    public DatasourceController(DatasourceService datasourceService, PermService permService) {
         this.datasourceService = datasourceService;
+        this.permService = permService;
     }
 
     @GetMapping
     public Result<IPage<Datasource>> page(@RequestParam(defaultValue = "1") long page,
                                           @RequestParam(defaultValue = "10") long size,
                                           @RequestParam(required = false) String keyword) {
+        permService.requireAdmin();
         return Result.ok(datasourceService.page(page, size, keyword));
     }
 
     @GetMapping("/options")
     public Result<List<Datasource>> options() {
+        permService.requireAdmin();
         return Result.ok(datasourceService.options());
     }
 
     @GetMapping("/{id}")
     public Result<Datasource> get(@PathVariable String id) {
+        permService.requireAdmin();
         Datasource ds = datasourceService.get(id);
         ds.setPassword(null);
         return Result.ok(ds);
@@ -51,12 +57,14 @@ public class DatasourceController {
 
     @PostMapping
     public Result<Void> create(@RequestBody Datasource datasource) {
+        permService.requireAdmin();
         datasourceService.create(datasource);
         return Result.ok();
     }
 
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable String id, @RequestBody Datasource datasource) {
+        permService.requireAdmin();
         datasource.setId(id);
         datasourceService.update(datasource);
         return Result.ok();
@@ -64,12 +72,14 @@ public class DatasourceController {
 
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable String id) {
+        permService.requireAdmin();
         datasourceService.delete(id);
         return Result.ok();
     }
 
     @PostMapping("/{id}/test")
     public Result<String> test(@PathVariable String id) {
+        permService.requireAdmin();
         return Result.ok(datasourceService.test(id));
     }
 }

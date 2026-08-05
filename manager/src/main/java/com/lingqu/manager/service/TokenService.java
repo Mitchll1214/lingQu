@@ -17,6 +17,8 @@ import java.util.List;
 
 /**
  * Token 管理。
+ * 有效期支持「开始时间 ~ 结束时间」配置（startAt/expireAt，均可为空：空=立即生效/永不过期）。
+ * 明文仅在生成时返回一次；需要再次查看时通过 reveal 主动解密（需有项目权限）。
  */
 @Service
 public class TokenService {
@@ -25,19 +27,29 @@ public class TokenService {
 
     private final TokenMapper tokenMapper;
     private final ProjectMapper projectMapper;
+    private final PermService permService;
 
-    public TokenService(TokenMapper tokenMapper, ProjectMapper projectMapper) {
+    public TokenService(TokenMapper tokenMapper, ProjectMapper projectMapper, PermService permService) {
         this.tokenMapper = tokenMapper;
         this.projectMapper = projectMapper;
+        this.permService = permService;
     }
 
     /**
      * 创建 Token。返回明文（仅此一次），库中存储 AES 加密值。
+     *
+     * @param startAt  生效开始时间，null 表示立即生效
+     * @param expireAt 过期时间，null 表示永不过期
      */
-    public Token create(String projectId, String tokenName, Integer expireDays) {
+    public Token create(String projectId, String tokenName, LocalDateTime startAt, LocalDateTime expireAt) {
+        permService.checkProjectPermission(projectId);
         Project project = projectMapper.selectById(projectId);
         if (project == null) {
             throw new BizException(404, "项目不存在");
+        }
+        // 校验时间范围合法性
+        if (startAt != null && expireAt != null && !startAt.isBefore(expireAt)) {
+            throw new BizException("开始时间必须早于结束时间");
         }
         String plainToken = randomToken();
         Token token = new Token();
@@ -45,9 +57,8 @@ public class TokenService {
         token.setProjectId(projectId);
         token.setToken(CryptoUtil.encrypt(plainToken));
         token.setTokenName(StringUtils.hasText(tokenName) ? tokenName : "默认Token");
-        if (expireDays != null && expireDays > 0) {
-            token.setExpireAt(LocalDateTime.now().plusDays(expireDays));
-        }
+        token.setStartAt(startAt);
+        token.setExpireAt(expireAt);
         token.setStatus(1);
         tokenMapper.insert(token);
 
@@ -57,7 +68,8 @@ public class TokenService {
         result.setProjectId(projectId);
         result.setToken(plainToken);
         result.setTokenName(token.getTokenName());
-        result.setExpireAt(token.getExpireAt());
+        result.setStartAt(startAt);
+        result.setExpireAt(expireAt);
         result.setStatus(1);
         return result;
     }
@@ -65,12 +77,28 @@ public class TokenService {
     public List<Token> list(String projectId) {
         LambdaQueryWrapper<Token> qw = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(projectId)) {
+            permService.checkProjectPermission(projectId);
             qw.eq(Token::getProjectId, projectId);
+        } else {
+            List<String> permitted = permService.permittedProjectIds();
+            if (permitted != null) {
+                qw.in(Token::getProjectId, permitted);
+            }
         }
         qw.orderByDesc(Token::getCreatedAt);
         List<Token> list = tokenMapper.selectList(qw);
         list.forEach(t -> t.setToken("******"));
         return list;
+    }
+
+    /** 查看明文（主动操作，需项目权限） */
+    public String reveal(String id) {
+        Token token = tokenMapper.selectById(id);
+        if (token == null) {
+            throw new BizException(404, "Token 不存在");
+        }
+        permService.checkProjectPermission(token.getProjectId());
+        return CryptoUtil.decrypt(token.getToken());
     }
 
     /** 吊销 */
@@ -79,6 +107,7 @@ public class TokenService {
         if (token == null) {
             throw new BizException(404, "Token 不存在");
         }
+        permService.checkProjectPermission(token.getProjectId());
         token.setStatus(0);
         tokenMapper.updateById(token);
     }

@@ -9,7 +9,7 @@
         </el-select>
         <el-button type="primary" @click="load">查询</el-button>
         <div style="flex: 1"></div>
-        <el-button type="success" @click="openCreate">新建项目</el-button>
+        <el-button v-if="isAdmin" type="success" @click="openCreate">新建项目</el-button>
       </div>
 
       <el-table :data="rows" v-loading="loading" border stripe>
@@ -39,10 +39,10 @@
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button link type="primary" @click="openTokens(row)">Token</el-button>
-            <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleStatus(row)">
+            <el-button v-if="isAdmin" link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleStatus(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
-            <el-button link type="danger" @click="remove(row)">删除</el-button>
+            <el-button v-if="isAdmin" link type="danger" @click="remove(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -97,22 +97,29 @@
     </el-dialog>
 
     <!-- Token 管理 -->
-    <el-dialog v-model="tokenVisible" :title="`Token 管理 - ${current?.name || ''}`" width="640px" destroy-on-close>
-      <el-form inline>
+    <el-dialog v-model="tokenVisible" :title="`Token 管理 - ${current?.name || ''}`" width="680px" destroy-on-close>
+      <el-form :inline="true">
         <el-form-item label="标识名称">
-          <el-input v-model="tokenForm.tokenName" placeholder="如：生产环境" style="width: 160px" />
+          <el-input v-model="tokenForm.tokenName" placeholder="如：生产环境" style="width: 150px" />
         </el-form-item>
-        <el-form-item label="过期天数">
-          <el-input-number v-model="tokenForm.expireDays" :min="0" :max="3650" style="width: 130px" />
-          <span style="margin-left: 6px; color: #909399">0 表示永不过期</span>
+        <el-form-item label="开始时间">
+          <el-date-picker v-model="tokenForm.startAt" type="datetime" placeholder="留空=立即生效"
+            style="width: 190px" value-format="YYYY-MM-DD HH:mm:ss" />
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker v-model="tokenForm.expireAt" type="datetime" placeholder="留空=永不过期"
+            style="width: 190px" value-format="YYYY-MM-DD HH:mm:ss" />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="createToken">生成 Token</el-button>
         </el-form-item>
       </el-form>
       <el-table :data="tokens" size="small" border>
-        <el-table-column prop="tokenName" label="标识" min-width="120" />
-        <el-table-column prop="expireAt" label="过期时间" width="170">
+        <el-table-column prop="tokenName" label="标识" min-width="110" />
+        <el-table-column label="生效时间" width="165">
+          <template #default="{ row }">{{ row.startAt ? formatTime(row.startAt) : '立即' }}</template>
+        </el-table-column>
+        <el-table-column label="过期时间" width="165">
           <template #default="{ row }">{{ row.expireAt ? formatTime(row.expireAt) : '永不过期' }}</template>
         </el-table-column>
         <el-table-column label="状态" width="80">
@@ -120,22 +127,41 @@
             <el-tag size="small" :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '有效' : '已吊销' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="90">
+        <el-table-column label="操作" width="140">
           <template #default="{ row }">
+            <el-button v-if="row.status === 1" link type="primary" @click="revealToken(row)">查看明文</el-button>
             <el-button v-if="row.status === 1" link type="danger" @click="revokeToken(row)">吊销</el-button>
           </template>
         </el-table-column>
       </el-table>
       <el-alert style="margin-top: 10px" type="info" :closable="false"
-        title="Token 明文仅在生成时显示一次，请立即复制保存；库中存储的是加密值。" />
+        title="Token 明文按需查看（点「查看明文」）；库中存储的是加密值。" />
+    </el-dialog>
+
+    <!-- Token 明文展示 -->
+    <el-dialog v-model="plainVisible" title="Token 明文" width="560px" destroy-on-close>
+      <div class="plain-box">
+        <code class="plain-token">{{ plainToken }}</code>
+        <el-button type="primary" size="small" @click="copyText(plainToken)">复制</el-button>
+      </div>
+      <el-alert type="warning" :closable="false" style="margin-top: 8px"
+        title="请妥善保管 Token，泄露可能导致未授权访问；吊销后立即失效。" />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { projectApi, datasourceApi, tokenApi } from '../api/modules'
+
+const isAdmin = computed(() => {
+  try {
+    return JSON.parse(sessionStorage.getItem('lingqu_user') || 'null')?.role === 'ADMIN'
+  } catch {
+    return false
+  }
+})
 
 const loading = ref(false)
 const rows = ref([])
@@ -149,7 +175,9 @@ const datasourceOptions = ref([])
 const tokenVisible = ref(false)
 const current = ref(null)
 const tokens = ref([])
-const tokenForm = reactive({ tokenName: '', expireDays: 0 })
+const tokenForm = reactive({ tokenName: '', startAt: null, expireAt: null })
+const plainVisible = ref(false)
+const plainToken = ref('')
 
 const AUTH_MAP = { none: ['info', '不鉴权'], token: ['warning', 'Bearer'], apikey: ['primary', 'API Key'] }
 const authText = (t) => (AUTH_MAP[t] || AUTH_MAP.none)[1]
@@ -226,21 +254,49 @@ async function openTokens(row) {
   tokenVisible.value = true
   tokens.value = await tokenApi.list(row.id)
   tokenForm.tokenName = ''
-  tokenForm.expireDays = 0
+  tokenForm.startAt = null
+  tokenForm.expireAt = null
 }
 
 async function createToken() {
   const created = await tokenApi.create({
     projectId: current.value.id,
     tokenName: tokenForm.tokenName,
-    expireDays: tokenForm.expireDays
+    startAt: tokenForm.startAt || null,
+    expireAt: tokenForm.expireAt || null
   })
-  await ElMessageBox.alert(
-    `Token：<b style="color:#e6a23c">${created.token}</b>`,
-    '生成成功（仅显示一次）',
-    { dangerouslyUseHTMLString: true, confirmButtonText: '我已复制' }
-  )
+  plainToken.value = created.token
+  plainVisible.value = true
   tokens.value = await tokenApi.list(current.value.id)
+}
+
+async function revealToken(row) {
+  plainToken.value = await tokenApi.reveal(row.id)
+  plainVisible.value = true
+}
+
+function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => ElMessage.success('已复制')).catch(() => fallbackCopy(text))
+  } else {
+    fallbackCopy(text)
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.style.position = 'fixed'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  ta.select()
+  try {
+    document.execCommand('copy')
+    ElMessage.success('已复制')
+  } catch (e) {
+    ElMessage.warning('复制失败，请手动选择复制')
+  }
+  document.body.removeChild(ta)
 }
 
 async function revokeToken(row) {
@@ -258,4 +314,12 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+.plain-box {
+  display: flex; align-items: center; gap: 10px;
+  background: #f5f7fa; border-radius: 6px; padding: 10px 14px;
+}
+.plain-token {
+  flex: 1; font-family: Consolas, Menlo, monospace; font-size: 14px;
+  color: #e6a23c; word-break: break-all; user-select: all;
+}
 </style>

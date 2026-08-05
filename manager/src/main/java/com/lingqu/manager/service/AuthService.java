@@ -28,6 +28,10 @@ public class AuthService {
         if (user == null || !new BCryptPasswordEncoder().matches(password, user.getPasswordHash())) {
             throw new BizException(401, "用户名或密码错误");
         }
+        // 禁用用户禁止登录
+        if (user.getStatus() != null && user.getStatus() == 0) {
+            throw new BizException(401, "账号已被禁用，请联系管理员");
+        }
         user.setPasswordHash(null);
         session.setAttribute(AuthInterceptor.SESSION_USER, user);
         return user;

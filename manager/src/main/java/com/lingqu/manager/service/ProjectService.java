@@ -25,11 +25,14 @@ public class ProjectService {
     private final ProjectMapper projectMapper;
     private final ApiMapper apiMapper;
     private final DatasourceMapper datasourceMapper;
+    private final PermService permService;
 
-    public ProjectService(ProjectMapper projectMapper, ApiMapper apiMapper, DatasourceMapper datasourceMapper) {
+    public ProjectService(ProjectMapper projectMapper, ApiMapper apiMapper,
+                          DatasourceMapper datasourceMapper, PermService permService) {
         this.projectMapper = projectMapper;
         this.apiMapper = apiMapper;
         this.datasourceMapper = datasourceMapper;
+        this.permService = permService;
     }
 
     public IPage<Project> page(long page, long size, String keyword, Integer status) {
@@ -40,11 +43,17 @@ public class ProjectService {
         if (status != null) {
             qw.eq(Project::getStatus, status);
         }
+        // 普通用户仅可见有权限的项目
+        List<String> permitted = permService.permittedProjectIds();
+        if (permitted != null) {
+            qw.in(Project::getId, permitted);
+        }
         qw.orderByDesc(Project::getUpdatedAt);
         return projectMapper.selectPage(new Page<>(page, size), qw);
     }
 
     public Project get(String id) {
+        permService.checkProjectPermission(id);
         Project project = projectMapper.selectById(id);
         if (project == null) {
             throw new BizException(404, "项目不存在");
@@ -53,6 +62,7 @@ public class ProjectService {
     }
 
     public void create(Project project) {
+        permService.requireAdmin();
         validateBase(project);
         project.setId(IdUtil.uuid());
         if (project.getStatus() == null) {
@@ -62,6 +72,7 @@ public class ProjectService {
     }
 
     public void update(Project project) {
+        permService.requireAdmin();
         get(project.getId());
         validateBase(project);
         // 唯一性校验需排除自身
@@ -76,6 +87,7 @@ public class ProjectService {
     }
 
     public void updateStatus(String id, Integer status) {
+        permService.requireAdmin();
         if (status == null || (status != 0 && status != 1)) {
             throw new BizException("状态值只能为 0（禁用）或 1（启用）");
         }
@@ -89,9 +101,10 @@ public class ProjectService {
     }
 
     /**
-     * 软删除：仅当项目下无已上线接口时允许。
+     * 软删除：仅当项目下无已上线接口时允许。仅管理员可操作。
      */
     public void delete(String id) {
+        permService.requireAdmin();
         get(id);
         Long online = apiMapper.selectCount(new LambdaQueryWrapper<Api>()
                 .eq(Api::getProjectId, id)
@@ -102,11 +115,16 @@ public class ProjectService {
         projectMapper.deleteById(id);
     }
 
-    /** 下拉选项：全部启用项目 */
+    /** 下拉选项：当前用户可见的启用项目 */
     public List<Project> options() {
-        return projectMapper.selectList(new LambdaQueryWrapper<Project>()
-                .eq(Project::getStatus, 1)
-                .orderByAsc(Project::getCode));
+        LambdaQueryWrapper<Project> qw = new LambdaQueryWrapper<>();
+        qw.eq(Project::getStatus, 1);
+        List<String> permitted = permService.permittedProjectIds();
+        if (permitted != null) {
+            qw.in(Project::getId, permitted);
+        }
+        qw.orderByAsc(Project::getCode);
+        return projectMapper.selectList(qw);
     }
 
     private void validateBase(Project project) {

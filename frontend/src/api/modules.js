@@ -39,7 +39,18 @@ export const apiApi = {
 export const tokenApi = {
   list: (projectId) => request.get('/api/admin/tokens', { params: { projectId } }),
   create: (data) => request.post('/api/admin/tokens', data),
+  reveal: (id) => request.get(`/api/admin/tokens/${id}/reveal`),
   revoke: (id) => request.delete(`/api/admin/tokens/${id}`)
+}
+
+export const userApi = {
+  page: (params) => request.get('/api/admin/users', { params }),
+  create: (data) => request.post('/api/admin/users', data),
+  userProjects: (id) => request.get(`/api/admin/users/${id}/projects`),
+  updateProjects: (id, projectIds) => request.put(`/api/admin/users/${id}/projects`, { projectIds }),
+  resetPassword: (id) => request.post(`/api/admin/users/${id}/reset-password`),
+  updateStatus: (id, status) => request.put(`/api/admin/users/${id}/status`, { status }),
+  changePassword: (data) => request.post('/api/admin/users/change-password', data)
 }
 
 export const logApi = {

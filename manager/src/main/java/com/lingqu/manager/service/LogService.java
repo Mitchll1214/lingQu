@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 调用日志查询。
@@ -17,16 +18,24 @@ import java.time.LocalDateTime;
 public class LogService {
 
     private final ApiLogMapper apiLogMapper;
+    private final PermService permService;
 
-    public LogService(ApiLogMapper apiLogMapper) {
+    public LogService(ApiLogMapper apiLogMapper, PermService permService) {
         this.apiLogMapper = apiLogMapper;
+        this.permService = permService;
     }
 
     public IPage<ApiLog> page(long page, long size, String projectId, String apiId,
                               LocalDateTime start, LocalDateTime end, Integer success) {
         LambdaQueryWrapper<ApiLog> qw = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(projectId)) {
+            permService.checkProjectPermission(projectId);
             qw.eq(ApiLog::getProjectId, projectId);
+        } else {
+            List<String> permitted = permService.permittedProjectIds();
+            if (permitted != null) {
+                qw.in(ApiLog::getProjectId, permitted);
+            }
         }
         if (StringUtils.hasText(apiId)) {
             qw.eq(ApiLog::getApiId, apiId);

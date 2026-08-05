@@ -25,6 +25,9 @@ public class Token {
     /** 标识名称 */
     private String tokenName;
 
+    /** 生效开始时间，null 表示立即生效 */
+    private LocalDateTime startAt;
+
     /** 过期时间，null 表示永不过期 */
     private LocalDateTime expireAt;
 
@@ -64,6 +67,14 @@ public class Token {
 
     public void setTokenName(String tokenName) {
         this.tokenName = tokenName;
+    }
+
+    public LocalDateTime getStartAt() {
+        return startAt;
+    }
+
+    public void setStartAt(LocalDateTime startAt) {
+        this.startAt = startAt;
     }
 
     public LocalDateTime getExpireAt() {

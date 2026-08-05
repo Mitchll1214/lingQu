@@ -102,10 +102,17 @@ public class AuthService {
     /** 库中存储的是 AES 加密值，比对时对传入明文做同样加密后匹配（需求 4.5.4 严格校验 Token 与项目绑定） */
     private boolean validToken(String projectId, String plainToken) {
         String encrypted = CryptoUtil.encrypt(plainToken);
+        LocalDateTime now = LocalDateTime.now();
         for (Token t : configCache.getTokens(projectId)) {
             if (t.getStatus() != null && t.getStatus() == 1
-                    && encrypted.equals(t.getToken())
-                    && (t.getExpireAt() == null || t.getExpireAt().isAfter(LocalDateTime.now()))) {
+                    && encrypted.equals(t.getToken())) {
+                // 有效期校验：开始时间（未到不生效）+ 结束时间（过期失效）
+                if (t.getStartAt() != null && now.isBefore(t.getStartAt())) {
+                    continue;
+                }
+                if (t.getExpireAt() != null && now.isAfter(t.getExpireAt())) {
+                    continue;
+                }
                 return true;
             }
         }

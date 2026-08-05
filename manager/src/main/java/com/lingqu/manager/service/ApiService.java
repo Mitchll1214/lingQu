@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,16 +27,25 @@ public class ApiService {
 
     private final ApiMapper apiMapper;
     private final ProjectMapper projectMapper;
+    private final PermService permService;
 
-    public ApiService(ApiMapper apiMapper, ProjectMapper projectMapper) {
+    public ApiService(ApiMapper apiMapper, ProjectMapper projectMapper, PermService permService) {
         this.apiMapper = apiMapper;
         this.projectMapper = projectMapper;
+        this.permService = permService;
     }
 
     public IPage<Api> page(long page, long size, String projectId, String keyword, Integer status) {
         LambdaQueryWrapper<Api> qw = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(projectId)) {
+            permService.checkProjectPermission(projectId);
             qw.eq(Api::getProjectId, projectId);
+        } else {
+            // 未指定项目：普通用户仅可见有权限项目的接口
+            List<String> permitted = permService.permittedProjectIds();
+            if (permitted != null) {
+                qw.in(Api::getProjectId, permitted);
+            }
         }
         if (StringUtils.hasText(keyword)) {
             qw.and(w -> w.like(Api::getApiName, keyword).or().like(Api::getApiPath, keyword));
@@ -52,10 +62,12 @@ public class ApiService {
         if (api == null) {
             throw new BizException(404, "接口不存在");
         }
+        permService.checkProjectPermission(api.getProjectId());
         return api;
     }
 
     public void create(Api api) {
+        permService.checkProjectPermission(api.getProjectId());
         validateBase(api);
         checkPathUnique(api.getProjectId(), api.getApiPath(), null);
         api.setId(IdUtil.uuid());

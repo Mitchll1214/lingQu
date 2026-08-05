@@ -175,11 +175,62 @@ curl http://localhost:8080/actuator/health   # 业务端健康
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | ❌ | 空 | 告警邮件 SMTP 通道（不配置则跳过发送） |
 | `ALERT_MAIL_FROM` / `ALERT_MAIL_TO` | ❌ | 空 | 告警邮件发件人 / 默认收件人 |
 
+## 项目鉴权与 Token 使用说明（需求 3.4）
+
+### 认证方式
+
+每个项目可独立配置认证方式（项目管理 → 编辑项目 → 认证方式）：
+
+| 认证方式 | 说明 | 调用时携带 |
+|----------|------|-----------|
+| `不鉴权` | 任何请求可直接调用 | 无 |
+| `Bearer Token` | 请求头 `Authorization: Bearer {token}` | 请求头 |
+| `API Key` | 请求头 `X-API-Key: {token}` | 请求头 |
+
+### Token 生命周期
+
+- **生成**：项目管理 → 该项目 → 「Token」按钮 → 设置标识名称、**开始时间**（留空=立即生效）、**结束时间**（留空=永不过期）→ 生成。
+- **明文查看**：Token 在库中 AES 加密存储；需要时点击列表「查看明文」即可显示并复制（需项目权限）。
+- **吊销**：Token 被吊销后立即失效。
+- **校验规则**：Token 必须属于目标项目、状态有效、当前时间在 [开始时间, 结束时间] 内；任一不满足返回 401。
+
+### 调用示例
+
+```bash
+# 项目认证方式 = Bearer Token
+curl -X POST http://{host}:{executor端口}/api/order/getDetail \
+  -H "Authorization: Bearer lq_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"orderId": 1001}'
+
+# 项目认证方式 = API Key
+curl -X GET "http://{host}:{executor端口}/api/order/getDetail?orderId=1001" \
+  -H "X-API-Key: lq_yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+```
+
+### 常见错误
+
+| HTTP | 含义 | 处理 |
+|------|------|------|
+| 401 | 缺少 Token / Token 无效 / 未到开始时间 / 已过期 / 已吊销 | 检查请求头与 Token 有效期 |
+| 403 | Token 不属于该项目（跨项目使用） | 使用目标项目下生成的 Token |
+| 429 | 触发限流 | 降低调用频率或调整接口 QPS |
+
+## 用户与权限说明（多用户）
+
+- **管理员（ADMIN）**：由环境变量 `DEFAULT_ADMIN_USER` / `DEFAULT_ADMIN_PASS` 固定（首次启动自动创建）。管理员拥有全部功能：项目管理（新建/编辑/删除/启停）、数据源管理、告警规则、用户管理。
+- **普通用户（USER）**：由管理员在「用户管理」中创建（初始密码 `88888888`），并**绑定可访问的项目**。普通用户登录后：
+  - 只能看到/维护**被授权的项目**（项目、接口、日志、调试、文档均按项目过滤）
+  - 不能新建/删除/禁用项目，不能查看数据源与告警配置
+  - 可修改自己的密码（右上角「修改密码」）
+- 管理员可对用户：绑定/解绑项目、启用/禁用账号、**重置密码为默认 `88888888`**。
+- 管理员账号受保护：不可被禁用、不可被重置（密码只能通过环境变量修改）。
+
 ## 业务 API 调用（需求 7）
 
 ```
-POST /{项目route_prefix}/{接口api_path}
-Host: {容器}:8080
+[GET|POST|PUT|DELETE] /{项目route_prefix}/{接口api_path}
+Host: {容器}:8080（或你配置的 EXECUTOR_PORT）
 Authorization: Bearer {Token}     # 项目认证方式为 token 时
 X-API-Key: {ApiKey}               # 项目认证方式为 apikey 时
 Content-Type: application/json    # POST/PUT 时

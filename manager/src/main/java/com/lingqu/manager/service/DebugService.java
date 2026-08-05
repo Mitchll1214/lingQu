@@ -36,6 +36,7 @@ public class DebugService {
 
     private final ProjectService projectService;
     private final ApiService apiService;
+    private final PermService permService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Value("${EXECUTOR_PORT:8080}")
@@ -45,9 +46,10 @@ public class DebugService {
     @Value("${EXECUTOR_BASE_URL:}")
     private String executorBaseUrl;
 
-    public DebugService(ProjectService projectService, ApiService apiService) {
+    public DebugService(ProjectService projectService, ApiService apiService, PermService permService) {
         this.projectService = projectService;
         this.apiService = apiService;
+        this.permService = permService;
     }
 
     /** 实际转发基础地址（供前端展示与内部转发使用） */
@@ -60,6 +62,7 @@ public class DebugService {
 
     public Map<String, Object> execute(String projectId, String apiId, Map<String, Object> params,
                                        Map<String, String> headers) {
+        permService.checkProjectPermission(projectId);
         Project project = projectService.get(projectId);
         Api api = apiService.get(apiId);
         if (!api.getProjectId().equals(projectId)) {

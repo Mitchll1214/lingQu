@@ -20,6 +20,9 @@ public class Token {
     /** AES 加密存储 */
     private String token;
 
+    /** 生效开始时间，null 表示立即生效 */
+    private LocalDateTime startAt;
+
     private LocalDateTime expireAt;
 
     /** 0无效 1有效 */
@@ -47,6 +50,14 @@ public class Token {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public LocalDateTime getStartAt() {
+        return startAt;
+    }
+
+    public void setStartAt(LocalDateTime startAt) {
+        this.startAt = startAt;
     }
 
     public LocalDateTime getExpireAt() {

@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 @TableName("lingqu_user")
 public class User {
 
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_USER = "USER";
+
     @TableId(type = IdType.INPUT)
     private String id;
 
@@ -22,8 +25,11 @@ public class User {
     /** BCrypt 哈希 */
     private String passwordHash;
 
-    /** 角色，当前仅 ADMIN */
+    /** 角色：ADMIN 管理员 / USER 普通用户 */
     private String role;
+
+    /** 0禁用 1启用 */
+    private Integer status;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
@@ -58,6 +64,14 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {

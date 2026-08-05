@@ -29,8 +29,11 @@
             调试请求由管理端转发到 Executor（{{ executorBaseUrl || 'http://localhost:8080' }}），每次调试前自动刷新 Executor 配置。
           </div>
 
-          <el-alert v-if="currentProject?.authType !== 'none'" style="margin: 10px 0" type="warning" :closable="false"
-            :title="`该项目开启了${authText(currentProject.authType)}认证，调试时需要在下方请求头中携带认证信息，否则会返回 401。`" />
+          <el-alert v-if="currentProject?.authType !== 'none'" style="margin: 10px 0" :closable="false"
+            :type="authFilled ? 'success' : 'warning'"
+            :title="authFilled
+              ? `已自动填入 ${authText(currentProject.authType)} 认证头（取该项目第一个有效密钥），可直接发送。`
+              : `该项目开启了${authText(currentProject.authType)}认证：下方请求头已留空，请在「项目管理 → ${currentProject.authType === 'apikey' ? 'API Key' : 'Token'}」中生成密钥后在此填写，否则会返回 401。`" />
 
           <h4>请求参数（JSON）</h4>
           <el-input v-model="paramsJson" type="textarea" :rows="10"
@@ -78,7 +81,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { projectApi, apiApi, debugApi } from '../api/modules'
+import { projectApi, apiApi, debugApi, tokenApi } from '../api/modules'
 
 const projects = ref([])
 const projectId = ref('')
@@ -87,6 +90,7 @@ const apiId = ref('')
 const currentApi = ref(null)
 const paramsJson = ref('{}')
 const headersJson = ref('{}')
+const authFilled = ref(false)
 const sending = ref(false)
 const result = ref(null)
 const executorBaseUrl = ref('')
@@ -116,6 +120,8 @@ async function onProjectChange() {
   apiId.value = ''
   currentApi.value = null
   result.value = null
+  authFilled.value = false
+  headersJson.value = '{}'
   if (!projectId.value) {
     apis.value = []
     return
@@ -123,6 +129,43 @@ async function onProjectChange() {
   const data = await apiApi.page({ page: 1, size: 200, projectId: projectId.value })
   // 只列出已上线接口（草稿/下线无法被 Executor 调用）
   apis.value = (data.records || []).filter((a) => a.status === 1)
+  // 项目有鉴权时，自动填充认证请求头（取第一个有效 Token/API Key 的明文）
+  if (currentProject.value?.authType !== 'none') {
+    await autoFillAuthHeader()
+  }
+}
+
+/** 自动填充鉴权头：拉取该项目有效密钥（status=1 且在起止时间内），解密后填入 headersJson */
+async function autoFillAuthHeader() {
+  const project = currentProject.value
+  if (!project) return
+  const list = await tokenApi.list(projectId.value)
+  const now = Date.now()
+  const valid = (list || []).filter((t) => {
+    if (t.status !== 1) return false
+    if (t.startAt && new Date(String(t.startAt).replace(' ', 'T')).getTime() > now) return false
+    if (t.expireAt && new Date(String(t.expireAt).replace(' ', 'T')).getTime() < now) return false
+    return true
+  })
+  if (!valid.length) return
+  try {
+    const plain = await tokenApi.reveal(valid[0].id)
+    let headers = {}
+    try {
+      headers = headersJson.value.trim() ? JSON.parse(headersJson.value) : {}
+    } catch (e) {
+      headers = {}
+    }
+    if (project.authType === 'apikey') {
+      headers['X-API-Key'] = plain
+    } else {
+      headers['Authorization'] = `Bearer ${plain}`
+    }
+    headersJson.value = JSON.stringify(headers, null, 2)
+    authFilled.value = true
+  } catch (e) {
+    authFilled.value = false
+  }
 }
 
 function onApiChange() {

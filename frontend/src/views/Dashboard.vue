@@ -10,7 +10,7 @@
             <div class="stat-meta">
               <div class="stat-label">{{ card.label }}</div>
               <div class="stat-value">{{ card.value }}</div>
-              <div v-if="card.sub" class="stat-sub">{{ card.sub }}</div>
+              <div class="stat-sub">{{ card.sub || '' }}</div>
             </div>
           </div>
         </el-card>
@@ -18,15 +18,26 @@
     </el-row>
 
     <el-card shadow="never" style="margin-top: 16px">
-      <template #header>近 7 日调用趋势</template>
-      <div v-if="trend.length" class="trend">
-        <div v-for="t in trend" :key="t.day" class="trend-item">
-          <div class="trend-bar" :style="{ height: barHeight(t.cnt) }">
-            <span class="trend-cnt">{{ t.cnt }}</span>
-          </div>
-          <div class="trend-day">{{ shortDay(t.day) }}</div>
-        </div>
-      </div>
+      <template #header>近 7 日调用趋势（柱状 + 折线）</template>
+      <svg v-if="trend.length" viewBox="0 0 800 200" class="trend-svg" role="img" aria-label="近 7 日调用趋势柱状折线图">
+        <defs>
+          <linearGradient id="trend-bar" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3f7fd4"/>
+            <stop offset="1" stop-color="#1f3b73"/>
+          </linearGradient>
+        </defs>
+        <line v-for="g in [0, 1, 2, 3]" :key="'g' + g" x1="60" :x2="760" :y1="35 + g * 43" :y2="35 + g * 43"
+              stroke="#e4e9f2" stroke-width="1" stroke-dasharray="4 4" />
+        <template v-for="(t, i) in trend" :key="t.day">
+          <rect :x="xAt(i) - 17" :y="barTop(i)" width="34" :height="barH(i)" rx="4" fill="url(#trend-bar)" />
+          <text :x="xAt(i)" :y="barTop(i) - 8" font-size="12" text-anchor="middle" fill="#6b7a90">{{ t.cnt }}</text>
+          <text :x="xAt(i)" :y="188" font-size="13" text-anchor="middle" fill="#909399">{{ shortDay(t.day) }}</text>
+        </template>
+        <polyline :points="linePoints" fill="none" stroke="#e6a23c" stroke-width="2.5"
+                  stroke-linejoin="round" stroke-linecap="round" />
+        <circle v-for="(t, i) in trend" :key="'p' + i" :cx="xAt(i)" :cy="barTop(i)" r="4"
+                fill="#e6a23c" stroke="#fff" stroke-width="1.5" />
+      </svg>
       <el-empty v-else description="暂无调用日志" :image-size="60" />
     </el-card>
 
@@ -54,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, markRaw } from 'vue'
+import { ref, computed, onMounted, markRaw } from 'vue'
 import { Folder, Connection, Coin, Odometer } from '@element-plus/icons-vue'
 import { dashboardApi } from '../api/modules'
 
@@ -63,11 +74,14 @@ const topProjects = ref([])
 const topApis = ref([])
 const trend = ref([])
 
-const barHeight = (cnt) => {
-  const max = Math.max(...trend.value.map((t) => Number(t.cnt) || 0), 1)
-  const h = Math.max(8, Math.round((Number(cnt) / max) * 150))
-  return h + 'px'
+const maxCnt = computed(() => Math.max(...trend.value.map((t) => Number(t.cnt) || 0), 1))
+const xAt = (i) => {
+  const n = trend.value.length
+  return n > 1 ? 60 + (i * 700) / (n - 1) : 60
 }
+const barH = (i) => Math.max(6, ((Number(trend.value[i]?.cnt) || 0) / maxCnt.value) * 130)
+const barTop = (i) => 165 - barH(i)
+const linePoints = computed(() => trend.value.map((t, i) => `${xAt(i)},${barTop(i)}`).join(' '))
 
 const shortDay = (day) => (day ? String(day).slice(5) : '-')
 
@@ -111,17 +125,6 @@ onMounted(async () => {
 .stat-meta { min-width: 0; }
 .stat-label { color: #6b7a90; font-size: 13px; margin-bottom: 4px; }
 .stat-value { font-size: 26px; font-weight: 700; color: #1f3b73; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.stat-sub { color: #909399; font-size: 12px; margin-top: 3px; }
-.trend {
-  display: flex; align-items: flex-end; justify-content: space-around;
-  height: 190px; padding: 10px 20px;
-}
-.trend-item { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; }
-.trend-bar {
-  width: 34px; background: linear-gradient(180deg, #3f7fd4, #1f3b73);
-  border-radius: 4px 4px 0 0; position: relative; min-height: 8px;
-  display: flex; align-items: flex-start; justify-content: center;
-}
-.trend-cnt { color: #fff; font-size: 11px; margin-top: 4px; }
-.trend-day { margin-top: 6px; font-size: 12px; color: #909399; }
+.stat-sub { color: #909399; font-size: 12px; margin-top: 3px; min-height: 18px; }
+.trend-svg { width: 100%; height: auto; display: block; }
 </style>

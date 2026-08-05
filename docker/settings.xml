@@ -1,14 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 灵渠数据接口平台 - Maven 国内镜像加速配置（阿里云） -->
+<!-- =====================================================================
+  灵渠数据接口平台 - Maven 镜像源配置
+  =====================================================================
+  默认策略：不强制镜像。依赖下载源由 pom.xml 中的 <repositories> 控制，
+  按声明顺序自动 failover（不可用时自动尝试下一个）：
+      1. aliyun-public  → https://maven.aliyun.com/repository/public   （国内·阿里云）
+      2. tencent-public → https://mirrors.cloud.tencent.com/nexus/repository/maven-public/ （国内·腾讯云）
+      3. Maven Central  → https://repo.maven.apache.org/maven2          （官方，Maven 内置默认）
+
+  国外/纯官方环境：保持默认即可（阿里云/腾讯云失败时自动落到官方 Central）。
+
+  如需强制指定某个镜像（例如海外服务器希望直接走官方源提速），
+  取消下方 <mirrors> 注释并按需修改 mirrorOf：
+====================================================================== -->
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+  <!-- 示例：强制所有仓库走阿里云镜像
   <mirrors>
     <mirror>
       <id>aliyun-public</id>
       <name>Aliyun Public Mirror</name>
       <url>https://maven.aliyun.com/repository/public</url>
-      <mirrorOf>central</mirrorOf>
+      <mirrorOf>*</mirrorOf>
     </mirror>
   </mirrors>
+  -->
 </settings>

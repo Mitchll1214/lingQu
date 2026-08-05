@@ -7,7 +7,7 @@
 # ---- Stage 1: 前端构建（Node） ----
 FROM node:20-alpine AS frontend
 WORKDIR /fe
-# 国内 npm 镜像加速（仅影响本阶段）
+# 国内 npm 镜像加速（仅影响本阶段）；海外构建可注释下一行，改用官方源
 RUN npm config set registry https://registry.npmmirror.com
 COPY frontend/package*.json ./
 # package*.json 不变时此层命中缓存，不会重复 install

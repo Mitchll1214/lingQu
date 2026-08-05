@@ -89,13 +89,20 @@ docker build -t lingqu .
 ```
 
 > **国内服务器加速提示**（腾讯云等）：
-> 1. 项目已内置国内镜像：Maven 走阿里云、npm 走 npmmirror，依赖下载速度大幅提升；
+> 1. 项目已内置多镜像源：Maven 按顺序自动 failover（阿里云 → 腾讯云 → 官方 Central），npm 走 npmmirror；
 > 2. 改代码后重建很快：依赖已分层缓存（pom.xml 不变时不再重复下载），通常 1 分钟内完成；
-> 3. 拉取基础镜像（eclipse-temurin 等）慢时，给 Docker 配加速器：编辑 `/etc/docker/daemon.json`
+> 3. 拉取基础镜像（eclipse-temurin 等）慢时，给 Docker 配多个加速器（Docker 会依次尝试）：
+>    编辑 `/etc/docker/daemon.json`
 >    ```json
->    { "registry-mirrors": ["https://mirror.ccs.tencentyun.com"] }
+>    {
+>      "registry-mirrors": [
+>        "https://mirror.ccs.tencentyun.com",
+>        "https://docker.m.daocloud.io",
+>        "https://hub-mirror.c.163.com"
+>      ]
+>    }
 >    ```
->    然后 `systemctl restart docker`（腾讯云服务器用内网地址 `mirror.ccs.tencentyun.com`，其他云用 `https://docker.m.daocloud.io` 等）。
+>    然后 `systemctl restart docker`（腾讯云服务器优先用内网地址 `mirror.ccs.tencentyun.com`）。
 
 **步骤 2 — 创建配置库**（以 MySQL 为例，也可使用你自己的库）：
 

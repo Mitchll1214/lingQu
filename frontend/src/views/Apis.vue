@@ -65,7 +65,7 @@
       />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑接口' : '新建接口'" width="760px" top="5vh" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑接口' : '新建接口'" width="860px" top="4vh" destroy-on-close>
       <el-form :model="form" label-width="100px">
         <el-row :gutter="12">
           <el-col :span="8">
@@ -86,39 +86,101 @@
             </el-form-item>
           </el-col>
         </el-row>
+
         <el-form-item label="脚本类型">
           <el-radio-group v-model="form.sqlType">
             <el-radio value="sql">MyBatis 动态 SQL</el-radio>
             <el-radio value="groovy">Groovy 脚本</el-radio>
           </el-radio-group>
         </el-form-item>
+
         <el-form-item label="SQL / 脚本" required>
           <el-input
             v-model="form.sqlContent"
             type="textarea"
-            :rows="9"
-            placeholder="SELECT * FROM t_user WHERE id = #{id}  支持 <if>/<where>/<foreach>/<choose>/<set>/<trim>"
+            :rows="7"
+            placeholder="SELECT * FROM t_user WHERE id = #{id}  支持 <if>/<where>/<foreach> 等动态标签"
             style="font-family: Consolas, Menlo, monospace"
+            @input="onSqlInput"
           />
         </el-form-item>
+
+        <!-- SQL 参数 ↔ 入参绑定检测 -->
+        <div v-if="form.sqlType === 'sql' && sqlParams.length" class="param-bind-box">
+          <div class="param-bind-title">SQL 中使用的参数（#{}）：</div>
+          <el-tag v-for="p in sqlParams" :key="p" size="small" class="param-chip"
+                  :type="paramDefined(p) ? 'success' : 'danger'">
+            {{ p }}{{ paramDefined(p) ? '' : '（未定义）' }}
+          </el-tag>
+          <el-button v-if="missingParams.length" link type="warning" size="small" style="margin-left: 8px"
+                     @click="fillMissingParams">
+            一键补全入参（{{ missingParams.join(', ') }}）
+          </el-button>
+        </div>
+        <el-alert v-else-if="form.sqlType === 'sql'" type="info" :closable="false" style="margin-bottom: 4px"
+          title="在 SQL 中用 #{参数名} 引用入参（如 WHERE id = #{id}），参数会自动绑定到下面的入参表。" />
+
         <el-form-item label="入参定义">
-          <el-input
-            v-model="form.params"
-            type="textarea"
-            :rows="3"
-            placeholder='[{"name":"id","type":"Integer","required":true,"defaultValue":null,"description":"主键"}]'
-            style="font-family: Consolas, Menlo, monospace"
-          />
+          <div class="table-wrap">
+            <el-table :data="paramRows" size="small" border>
+              <el-table-column label="参数名" min-width="130">
+                <template #default="{ row }"><el-input v-model="row.name" placeholder="如 id" size="small" /></template>
+              </el-table-column>
+              <el-table-column label="类型" width="110">
+                <template #default="{ row }">
+                  <el-select v-model="row.type" size="small" style="width: 100%">
+                    <el-option v-for="t in ['String', 'Integer', 'Float', 'Date', 'Boolean', 'Object']" :key="t" :label="t" :value="t" />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="必填" width="60">
+                <template #default="{ row }">
+                  <el-switch v-model="row.required" size="small" />
+                </template>
+              </el-table-column>
+              <el-table-column label="默认值" width="110">
+                <template #default="{ row }"><el-input v-model="row.defaultValue" size="small" placeholder="可选" /></template>
+              </el-table-column>
+              <el-table-column label="说明" min-width="140">
+                <template #default="{ row }"><el-input v-model="row.description" size="small" placeholder="可选" /></template>
+              </el-table-column>
+              <el-table-column label="" width="50">
+                <template #default="{ $index }">
+                  <el-button link type="danger" size="small" @click="paramRows.splice($index, 1)">删</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-button size="small" style="margin-top: 6px" @click="addParam">+ 添加参数</el-button>
+          </div>
         </el-form-item>
+
         <el-form-item label="出参映射">
-          <el-input
-            v-model="form.responseFormat"
-            type="textarea"
-            :rows="2"
-            placeholder='[{"source":"user_name","target":"userName"}]  （可选）'
-            style="font-family: Consolas, Menlo, monospace"
-          />
+          <div class="table-wrap">
+            <el-table :data="formatRows" size="small" border>
+              <el-table-column label="源字段（SQL 返回列名）" min-width="170">
+                <template #default="{ row }"><el-input v-model="row.source" size="small" placeholder="如 user_name" /></template>
+              </el-table-column>
+              <el-table-column label="输出字段名" min-width="150">
+                <template #default="{ row }"><el-input v-model="row.target" size="small" placeholder="留空=同名输出" /></template>
+              </el-table-column>
+              <el-table-column label="格式化" width="180">
+                <template #default="{ row }">
+                  <el-input v-model="row.format" size="small" placeholder="如 date:yyyy-MM-dd" />
+                </template>
+              </el-table-column>
+              <el-table-column label="" width="50">
+                <template #default="{ $index }">
+                  <el-button link type="danger" size="small" @click="formatRows.splice($index, 1)">删</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <el-button size="small" style="margin-top: 6px" @click="addFormat">+ 添加字段</el-button>
+            <div style="color: #909399; font-size: 12px; margin-top: 4px">
+              配置后返回结果只保留此处声明的字段；留空则返回 SQL 原始列。
+            </div>
+          </div>
         </el-form-item>
+
         <el-row :gutter="12">
           <el-col :span="8">
             <el-form-item label="日志开关">
@@ -148,7 +210,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { apiApi, projectApi } from '../api/modules'
 
@@ -161,11 +223,49 @@ const dialogVisible = ref(false)
 const saving = ref(false)
 const form = reactive({})
 const logEnabled = ref('0')
+const paramRows = ref([])
+const formatRows = ref([])
 
 const STATUS_MAP = { 0: ['info', '草稿'], 1: ['success', '已上线'], 2: ['warning', '已下线'] }
 const statusText = (s) => (STATUS_MAP[s] || STATUS_MAP[0])[1]
 const statusTag = (s) => (STATUS_MAP[s] || STATUS_MAP[0])[0]
 const methodTag = (m) => ({ GET: 'success', POST: 'primary', PUT: 'warning', DELETE: 'danger' }[m] || 'info')
+
+/** 从 SQL 中提取 #{} 参数名 */
+const sqlParams = computed(() => {
+  const names = []
+  const re = /#\{([\w.]+)\}/g
+  let m
+  while ((m = re.exec(form.sqlContent || ''))) {
+    if (!names.includes(m[1])) names.push(m[1])
+  }
+  return names
+})
+
+const missingParams = computed(() => sqlParams.value.filter((p) => !paramDefined(p)))
+
+function paramDefined(name) {
+  return paramRows.value.some((r) => r.name && r.name.trim() === name)
+}
+
+function onSqlInput() {
+  // 仅触发重新计算（computed 已自动），无需额外逻辑
+}
+
+function fillMissingParams() {
+  missingParams.value.forEach((name) => {
+    paramRows.value.push({ name, type: 'String', required: false, defaultValue: '', description: '' })
+  })
+  ElMessage.success('已补全缺失参数')
+}
+
+function addParam() {
+  paramRows.value.push({ name: '', type: 'String', required: false, defaultValue: '', description: '' })
+}
+
+function addFormat() {
+  formatRows.value.push({ source: '', target: '', format: '' })
+}
 
 async function load() {
   loading.value = true
@@ -190,6 +290,8 @@ function openCreate() {
   form.logEnabled = 0
   form.rateLimitQps = 0
   logEnabled.value = '0'
+  paramRows.value = []
+  formatRows.value = []
   dialogVisible.value = true
 }
 
@@ -197,29 +299,41 @@ function openEdit(row) {
   Object.keys(form).forEach((k) => delete form[k])
   Object.assign(form, row)
   logEnabled.value = String(row.logEnabled === 1 ? '1' : '0')
+  paramRows.value = parseJsonRows(row.params)
+  formatRows.value = parseJsonRows(row.responseFormat)
   dialogVisible.value = true
 }
 
+function parseJsonRows(json) {
+  if (!json) return []
+  try {
+    const arr = JSON.parse(json)
+    return Array.isArray(arr) ? arr : []
+  } catch {
+    return []
+  }
+}
+
 async function save() {
-  if (form.params && form.params.trim()) {
-    try {
-      JSON.parse(form.params)
-    } catch (e) {
-      ElMessage.error('入参定义不是合法 JSON')
-      return
+  // 校验入参表参数名非空
+  for (const r of paramRows.value) {
+    if (r.name && r.name.trim()) {
+      r.name = r.name.trim()
     }
   }
-  if (form.responseFormat && form.responseFormat.trim()) {
-    try {
-      JSON.parse(form.responseFormat)
-    } catch (e) {
-      ElMessage.error('出参映射不是合法 JSON')
-      return
-    }
+  if (paramRows.value.some((r) => !r.name)) {
+    ElMessage.error('入参定义中存在空的参数名，请删除空行或填写参数名')
+    return
+  }
+  if (formatRows.value.some((r) => !r.source)) {
+    ElMessage.error('出参映射中存在空的源字段，请删除空行或填写源字段名')
+    return
   }
   saving.value = true
   try {
     const payload = { ...form, logEnabled: Number(logEnabled.value) }
+    payload.params = paramRows.value.length ? JSON.stringify(paramRows.value) : ''
+    payload.responseFormat = formatRows.value.length ? JSON.stringify(formatRows.value) : ''
     if (form.id) {
       await apiApi.update(form.id, payload)
     } else {
@@ -262,4 +376,11 @@ onMounted(async () => {
 
 <style scoped>
 .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+.param-bind-box {
+  background: #f5f7fa; border: 1px dashed #dcdfe6; border-radius: 6px;
+  padding: 8px 12px; margin: -6px 0 14px 100px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+}
+.param-bind-title { color: #606266; font-size: 13px; }
+.param-chip { font-family: Consolas, Menlo, monospace; }
+.table-wrap { width: 100%; }
 </style>

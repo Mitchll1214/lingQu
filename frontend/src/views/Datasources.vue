@@ -51,30 +51,58 @@
           <el-input v-model="form.name" maxlength="100" />
         </el-form-item>
         <el-form-item label="数据库类型" required>
-          <el-select v-model="form.dbType" style="width: 100%">
+          <el-select v-model="form.dbType" style="width: 100%" @change="onTypeChange">
             <el-option label="MySQL" value="mysql" />
             <el-option label="PostgreSQL" value="postgresql" />
-            <el-option label="Oracle（需自备驱动）" value="oracle" />
-            <el-option label="SQLServer（需自备驱动）" value="sqlserver" />
-            <el-option label="达梦 DM（需自备驱动）" value="dm" />
-            <el-option label="其他（需自备驱动）" value="other" />
+            <el-option label="其他（Oracle/SQLServer/达梦等，走高级配置）" value="other" />
           </el-select>
         </el-form-item>
-        <el-form-item label="JDBC URL" required>
-          <el-input v-model="form.jdbcUrl" placeholder="jdbc:mysql://host:3306/dbname" />
-        </el-form-item>
-        <el-form-item label="驱动类名">
-          <el-input v-model="form.driverClass" placeholder="mysql/postgresql 自动识别，其他类型需手工填写" />
-        </el-form-item>
+
+        <!-- 基础模式：MySQL / PostgreSQL -->
+        <template v-if="isSimpleType">
+          <el-row :gutter="12">
+            <el-col :span="16">
+              <el-form-item label="主机地址" required>
+                <el-input v-model="form.host" placeholder="如 192.168.1.10 或 mysql.example.com" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="端口" required>
+                <el-input-number v-model="form.port" :min="1" :max="65535" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-form-item label="数据库名称" required>
+            <el-input v-model="form.dbName" placeholder="如 mydb（JDBC URL 会自动生成）" />
+          </el-form-item>
+        </template>
+
         <el-form-item label="用户名">
           <el-input v-model="form.username" />
         </el-form-item>
         <el-form-item label="密码" :required="!form.id">
           <el-input v-model="form.password" type="password" show-password :placeholder="form.id ? '留空表示不修改' : ''" />
         </el-form-item>
-        <el-form-item label="连接池大小">
-          <el-input-number v-model="poolSize" :min="1" :max="100" />
-        </el-form-item>
+
+        <el-collapse style="border: none">
+          <el-collapse-item title="高级配置（驱动类名 / JDBC URL 覆盖 / 连接池）" name="adv">
+            <el-form-item v-if="isSimpleType" label="JDBC URL">
+              <el-input v-model="form.jdbcUrl" @input="urlTouched = true" />
+              <div style="color: #909399; font-size: 12px; line-height: 1.5; margin-top: 4px">
+                根据上方 主机/端口/库名 自动生成，如需追加连接参数（如字符集）可直接修改此处。
+              </div>
+            </el-form-item>
+            <el-form-item v-else label="JDBC URL" required>
+              <el-input v-model="form.jdbcUrl" placeholder="jdbc:oracle:thin:@host:1521:xe" />
+            </el-form-item>
+            <el-form-item label="驱动类名">
+              <el-input v-model="form.driverClass" :placeholder="isSimpleType ? 'mysql/postgresql 自动识别，可不填' : '必填，如 oracle.jdbc.OracleDriver'" />
+            </el-form-item>
+            <el-form-item label="连接池大小">
+              <el-input-number v-model="poolSize" :min="1" :max="100" />
+            </el-form-item>
+          </el-collapse-item>
+        </el-collapse>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -85,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { datasourceApi } from '../api/modules'
 
@@ -98,6 +126,50 @@ const saving = ref(false)
 const testingId = ref(null)
 const form = reactive({})
 const poolSize = ref(10)
+const urlTouched = ref(false)
+
+const SIMPLE_TYPES = ['mysql', 'postgresql']
+const isSimpleType = computed(() => SIMPLE_TYPES.includes(form.dbType))
+
+const DEFAULT_PORTS = { mysql: 3306, postgresql: 5432 }
+
+function buildJdbcUrl() {
+  if (!isSimpleType.value) return form.jdbcUrl || ''
+  const host = (form.host || '').trim()
+  const port = form.port || DEFAULT_PORTS[form.dbType] || 3306
+  const db = (form.dbName || '').trim()
+  if (form.dbType === 'postgresql') {
+    return `jdbc:postgresql://${host}:${port}/${db}`
+  }
+  return `jdbc:mysql://${host}:${port}/${db}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true`
+}
+
+// 基础字段变化时自动同步 JDBC URL（除非用户手动改过高级 URL）
+watch(
+  [() => form.host, () => form.port, () => form.dbName, () => form.dbType],
+  () => {
+    if (!urlTouched.value) {
+      form.jdbcUrl = buildJdbcUrl()
+    }
+  }
+)
+
+function onTypeChange() {
+  urlTouched.value = false
+  form.port = DEFAULT_PORTS[form.dbType] || 3306
+  if (!isSimpleType.value) {
+    form.driverClass = ''
+  }
+}
+
+/** 从已有 JDBC URL 解析出 主机/端口/库名，便于回填基础表单 */
+function parseJdbcUrl(url) {
+  const m = String(url || '').match(/^jdbc:(\w+):\/\/([^:/]+):?(\d*)\/([^?]+)/)
+  if (!m) return null
+  const type = m[1] === 'postgresql' || m[1] === 'postgres' ? 'postgresql' : m[1] === 'mysql' ? 'mysql' : null
+  if (!type) return null
+  return { dbType: type, host: m[2], port: Number(m[3]) || DEFAULT_PORTS[type], dbName: m[4] }
+}
 
 async function load() {
   loading.value = true
@@ -113,8 +185,11 @@ async function load() {
 function openCreate() {
   Object.keys(form).forEach((k) => delete form[k])
   form.dbType = 'mysql'
+  form.port = 3306
   form.status = 1
+  urlTouched.value = false
   poolSize.value = 10
+  form.jdbcUrl = buildJdbcUrl()
   dialogVisible.value = true
 }
 
@@ -127,10 +202,32 @@ function openEdit(row) {
     const cfg = row.poolConfig ? JSON.parse(row.poolConfig) : {}
     if (cfg.poolSize) poolSize.value = Number(cfg.poolSize)
   } catch (e) { /* 忽略 */ }
+
+  const parsed = parseJdbcUrl(row.jdbcUrl)
+  if (parsed) {
+    form.dbType = parsed.dbType
+    form.host = parsed.host
+    form.port = parsed.port
+    form.dbName = parsed.dbName
+    urlTouched.value = false
+    form.jdbcUrl = buildJdbcUrl()
+  } else {
+    form.dbType = 'other'
+    urlTouched.value = true
+  }
   dialogVisible.value = true
 }
 
 async function save() {
+  if (isSimpleType.value) {
+    if (!form.host || !form.port || !form.dbName) {
+      ElMessage.warning('请填写主机地址、端口和数据库名称')
+      return
+    }
+  } else if (!form.jdbcUrl) {
+    ElMessage.warning('请填写 JDBC URL（其他类型需手工填写）')
+    return
+  }
   saving.value = true
   try {
     const payload = { ...form, poolConfig: JSON.stringify({ poolSize: poolSize.value }) }
@@ -173,4 +270,6 @@ onMounted(load)
 
 <style scoped>
 .toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+:deep(.el-collapse-item__header) { border: none; color: #409eff; font-size: 13px; }
+:deep(.el-collapse-item__wrap) { border: none; }
 </style>

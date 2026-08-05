@@ -7,9 +7,11 @@
           <el-option v-for="p in projects" :key="p.id" :label="`${p.name}（${p.routePrefix}）`" :value="p.id" />
         </el-select>
         <span style="color: #606266; margin-left: 8px">接口：</span>
-        <el-select v-model="apiId" placeholder="选择接口" style="width: 260px" filterable :disabled="!projectId" @change="onApiChange">
+        <el-select v-model="apiId" placeholder="选择已上线接口" style="width: 260px" filterable :disabled="!projectId" @change="onApiChange">
           <el-option v-for="a in apis" :key="a.id" :label="`${a.method} ${a.apiPath}（${a.apiName}）`" :value="a.id" />
         </el-select>
+        <el-alert v-if="projectId && !apis.length" type="info" :closable="false" style="flex: 1"
+          title="该项目暂无已上线接口：请先在「接口管理」中创建并上线接口（上线后最多 30 秒生效）。" />
       </div>
     </el-card>
 
@@ -112,7 +114,8 @@ async function onProjectChange() {
     return
   }
   const data = await apiApi.page({ page: 1, size: 200, projectId: projectId.value })
-  apis.value = data.records || []
+  // 只列出已上线接口（草稿/下线无法被 Executor 调用）
+  apis.value = (data.records || []).filter((a) => a.status === 1)
 }
 
 function onApiChange() {

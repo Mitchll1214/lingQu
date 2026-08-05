@@ -47,6 +47,13 @@ public class DebugService {
         if (!api.getProjectId().equals(projectId)) {
             throw new BizException("接口不属于该项目");
         }
+        // 前置校验：未上线接口给出明确提示（Executor 对未上线接口统一返回 404，新手会困惑）
+        if (api.getStatus() == null || api.getStatus() != Api.STATUS_ONLINE) {
+            throw new BizException("该接口尚未上线，请先在「接口管理」中点击上线后再调试（上线后最多 30 秒生效）");
+        }
+        if (project.getStatus() == null || project.getStatus() == 0) {
+            throw new BizException("该项目当前已禁用，无法调试");
+        }
 
         String baseUrl = executorUrl.replaceAll("/+$", "") + project.getRoutePrefix() + api.getApiPath();
         HttpHeaders httpHeaders = new HttpHeaders();

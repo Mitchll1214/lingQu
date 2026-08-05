@@ -119,6 +119,11 @@
         </div>
         <el-alert v-else-if="form.sqlType === 'sql'" type="info" :closable="false" style="margin-bottom: 4px"
           title="在 SQL 中用 #{参数名} 引用入参（如 WHERE id = #{id}），参数会自动绑定到下面的入参表。" />
+        <div v-if="form.sqlType === 'sql'" class="builtin-hint">
+          系统内置参数（SQL 中可直接使用，无需定义）：
+          <code>#{requestTime}</code> 当前时间（yyyy-MM-dd HH:mm:ss）、
+          <code>#{requestTimeMillis}</code> 毫秒时间戳
+        </div>
 
         <el-form-item label="入参定义">
           <div class="table-wrap">
@@ -382,5 +387,7 @@ onMounted(async () => {
 }
 .param-bind-title { color: #606266; font-size: 13px; }
 .param-chip { font-family: Consolas, Menlo, monospace; }
+.builtin-hint { color: #909399; font-size: 12px; margin: -4px 0 14px 100px; }
+.builtin-hint code { background: #f5f7fa; padding: 1px 4px; border-radius: 3px; font-family: Consolas, Menlo, monospace; color: #409eff; }
 .table-wrap { width: 100%; }
 </style>

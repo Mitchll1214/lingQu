@@ -47,7 +47,8 @@ export const logApi = {
 }
 
 export const debugApi = {
-  execute: (data) => request.post('/api/admin/debug/execute', data)
+  execute: (data) => request.post('/api/admin/debug/execute', data),
+  executorUrl: () => request.get('/api/admin/debug/executor-url')
 }
 
 export const alertApi = {

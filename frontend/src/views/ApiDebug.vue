@@ -23,7 +23,10 @@
           </template>
           <div class="url-bar">
             <el-tag :type="methodTag(currentApi.method)" size="small">{{ currentApi.method }}</el-tag>
-            <code class="code-text">http://localhost:8080{{ currentProject?.routePrefix }}{{ currentApi.apiPath }}</code>
+            <code class="code-text">{{ executorBaseUrl || 'http://localhost:8080' }}{{ currentProject?.routePrefix }}{{ currentApi.apiPath }}</code>
+          </div>
+          <div style="color: #909399; font-size: 12px; margin-top: 4px">
+            调试请求由管理端转发到 Executor（{{ executorBaseUrl || 'http://localhost:8080' }}），每次调试前自动刷新 Executor 配置。
           </div>
 
           <el-alert v-if="currentProject?.authType !== 'none'" style="margin: 10px 0" type="warning" :closable="false"
@@ -59,6 +62,9 @@
               </span>
             </div>
           </template>
+          <div v-if="result && result.url" class="resp-target">
+            实际转发地址：<code>{{ result.url }}</code>
+          </div>
           <el-empty v-if="!result" description="填写参数后点击「发送请求」" />
           <template v-else>
             <pre class="resp-body">{{ prettyBody }}</pre>
@@ -83,6 +89,7 @@ const paramsJson = ref('{}')
 const headersJson = ref('{}')
 const sending = ref(false)
 const result = ref(null)
+const executorBaseUrl = ref('')
 
 const currentProject = computed(() => projects.value.find((p) => p.id === projectId.value))
 const AUTH_MAP = { none: ['info', '不鉴权'], token: ['warning', 'Bearer'], apikey: ['primary', 'API Key'] }
@@ -176,6 +183,11 @@ async function send() {
 
 onMounted(async () => {
   projects.value = await projectApi.options()
+  try {
+    executorBaseUrl.value = (await debugApi.executorUrl()) || ''
+  } catch (e) {
+    executorBaseUrl.value = ''
+  }
 })
 </script>
 
@@ -184,6 +196,8 @@ onMounted(async () => {
 .url-bar { display: flex; align-items: center; gap: 10px; }
 .code-text { background: #f5f7fa; padding: 4px 8px; border-radius: 4px; font-size: 13px; }
 .resp-header { display: flex; align-items: center; }
+.resp-target { background: #f5f7fa; border-radius: 4px; padding: 6px 10px; font-size: 12px; color: #606266; margin-bottom: 8px; }
+.resp-target code { font-family: Consolas, Menlo, monospace; color: #409eff; }
 h4 { margin: 14px 0 8px; color: #303133; }
 .resp-body {
   background: #1f2d3d; color: #d3dce6; padding: 14px; border-radius: 6px;

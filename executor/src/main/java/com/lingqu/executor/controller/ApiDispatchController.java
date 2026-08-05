@@ -91,6 +91,14 @@ public class ApiDispatchController {
             Map<String, Object> params = collectParams(request);
             paramsJson = toJson(params);
 
+            // 系统内置参数（自动注入，无需用户传参）：
+            //   requestTime      当前时间，格式 yyyy-MM-dd HH:mm:ss（容器时区）
+            //   requestTimeMillis 当前时间毫秒时间戳
+            params.put("requestTime", java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            params.put("requestTimeMillis", System.currentTimeMillis());
+            paramsJson = toJson(params);
+
             // 执行
             Object data;
             if ("groovy".equalsIgnoreCase(api.getSqlType())) {

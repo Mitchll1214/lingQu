@@ -5,6 +5,7 @@ import com.lingqu.executor.auth.AuthService;
 import com.lingqu.executor.cache.ConfigCache;
 import com.lingqu.executor.common.BizException;
 import com.lingqu.executor.engine.GroovyExecutor;
+import com.lingqu.executor.engine.ParamBinder;
 import com.lingqu.executor.engine.RateLimiterManager;
 import com.lingqu.executor.engine.ResponseFormatter;
 import com.lingqu.executor.engine.SqlExecutor;
@@ -38,19 +39,22 @@ public class ApiDispatchController {
     private final GroovyExecutor groovyExecutor;
     private final RateLimiterManager rateLimiterManager;
     private final ResponseFormatter responseFormatter;
+    private final ParamBinder paramBinder;
     private final CallLogger callLogger;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public ApiDispatchController(AuthService authService, ConfigCache configCache,
                                  SqlExecutor sqlExecutor, GroovyExecutor groovyExecutor,
                                  RateLimiterManager rateLimiterManager,
-                                 ResponseFormatter responseFormatter, CallLogger callLogger) {
+                                 ResponseFormatter responseFormatter, ParamBinder paramBinder,
+                                 CallLogger callLogger) {
         this.authService = authService;
         this.configCache = configCache;
         this.sqlExecutor = sqlExecutor;
         this.groovyExecutor = groovyExecutor;
         this.rateLimiterManager = rateLimiterManager;
         this.responseFormatter = responseFormatter;
+        this.paramBinder = paramBinder;
         this.callLogger = callLogger;
     }
 
@@ -89,6 +93,8 @@ public class ApiDispatchController {
 
             // 请求参数：query 参数 + JSON body 合并
             Map<String, Object> params = collectParams(request);
+            // 入参定义绑定（需求 3.3.7）：必填校验 / 默认值填充 / 类型转换
+            params = paramBinder.bind(api, params);
             paramsJson = toJson(params);
 
             // 系统内置参数（自动注入，无需用户传参）：

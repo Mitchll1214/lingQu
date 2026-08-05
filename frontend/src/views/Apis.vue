@@ -156,6 +156,9 @@
               </el-table-column>
             </el-table>
             <el-button size="small" style="margin-top: 6px" @click="addParam">+ 添加参数</el-button>
+            <div style="color: #909399; font-size: 12px; margin-top: 4px">
+              入参定义会在请求时自动生效：必填参数缺失返回 400，默认值自动填充，类型自动转换（如 "123" → Integer）。
+            </div>
           </div>
         </el-form-item>
 

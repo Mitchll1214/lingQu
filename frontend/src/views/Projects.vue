@@ -38,7 +38,7 @@
         <el-table-column label="操作" width="240" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="primary" @click="openTokens(row)">Token</el-button>
+            <el-button link type="primary" @click="openTokens(row)">{{ row.authType === 'apikey' ? 'API Key' : 'Token' }}</el-button>
             <el-button v-if="isAdmin" link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleStatus(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
@@ -96,8 +96,8 @@
       </template>
     </el-dialog>
 
-    <!-- Token 管理 -->
-    <el-dialog v-model="tokenVisible" :title="`Token 管理 - ${current?.name || ''}`" width="680px" destroy-on-close>
+    <!-- Token / API Key 管理 -->
+    <el-dialog v-model="tokenVisible" :title="`${tokenTitle} - ${current?.name || ''}`" width="680px" destroy-on-close>
       <el-form :inline="true">
         <el-form-item label="标识名称">
           <el-input v-model="tokenForm.tokenName" placeholder="如：生产环境" style="width: 150px" />
@@ -134,7 +134,9 @@
           </template>
         </el-table-column>
       </el-table>
-      <el-alert style="margin-top: 10px" type="info" :closable="false"
+      <el-alert v-if="current?.authType === 'apikey'" style="margin-top: 10px" type="info" :closable="false"
+        title="调用时请携带请求头：X-API-Key: {Token}（而非 Authorization Bearer）。" />
+      <el-alert v-else style="margin-top: 10px" type="info" :closable="false"
         title="Token 明文按需查看（点「查看明文」）；库中存储的是加密值。" />
     </el-dialog>
 
@@ -178,6 +180,7 @@ const tokens = ref([])
 const tokenForm = reactive({ tokenName: '', startAt: null, expireAt: null })
 const plainVisible = ref(false)
 const plainToken = ref('')
+const tokenTitle = computed(() => (current.value?.authType === 'apikey' ? 'API Key 管理' : 'Token 管理'))
 
 const AUTH_MAP = { none: ['info', '不鉴权'], token: ['warning', 'Bearer'], apikey: ['primary', 'API Key'] }
 const authText = (t) => (AUTH_MAP[t] || AUTH_MAP.none)[1]

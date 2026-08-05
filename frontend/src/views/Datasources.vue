@@ -61,20 +61,22 @@
         <!-- 基础模式：MySQL / PostgreSQL -->
         <template v-if="isSimpleType">
           <el-row :gutter="12">
-            <el-col :span="16">
+            <el-col :span="24">
               <el-form-item label="主机地址" required>
                 <el-input v-model="form.host" placeholder="如 192.168.1.10 或 mysql.example.com" />
               </el-form-item>
             </el-col>
             <el-col :span="8">
               <el-form-item label="端口" required>
-                <el-input-number v-model="form.port" :min="1" :max="65535" style="width: 100%" />
+                <el-input v-model.number="form.port" inputmode="numeric" placeholder="3306" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="16">
+              <el-form-item label="数据库名称" required>
+                <el-input v-model="form.dbName" placeholder="如 mydb（JDBC URL 会自动生成）" />
               </el-form-item>
             </el-col>
           </el-row>
-          <el-form-item label="数据库名称" required>
-            <el-input v-model="form.dbName" placeholder="如 mydb（JDBC URL 会自动生成）" />
-          </el-form-item>
         </template>
 
         <el-form-item label="用户名">

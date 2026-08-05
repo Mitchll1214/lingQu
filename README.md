@@ -260,6 +260,7 @@ cd executor; .\mvnw.cmd spring-boot:run    # 业务端 8080
 | `EXECUTOR_BASE_URL` | ❌ | `http://localhost:8080` | Manager 在线调试转发目标（单容器默认即可） |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USERNAME` / `SMTP_PASSWORD` | ❌ | 空 | 告警邮件 SMTP 通道（不配置则跳过发送） |
 | `ALERT_MAIL_FROM` / `ALERT_MAIL_TO` | ❌ | 空 | 告警邮件发件人 / 默认收件人 |
+| `TZ` | ❌ | `Asia/Shanghai` | 容器时区（影响日志时间与告警判定） |
 
 ### 运维提示
 
@@ -342,8 +343,15 @@ cd executor; .\mvnw.cmd -DskipTests package
 
 ---
 
-## 📄 版权
+## 📄 License
 
-© 2026 灵渠 · 数据接口平台（Lingqu API Platform）
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-开发者：**Mitchll** · GitHub：[https://github.com/Mitchll1214/lingQu](https://github.com/Mitchll1214/lingQu)
+本项目基于 **MIT License** 开源。
+
+- Copyright © 2026 **Mitchll**（灵渠 · 数据接口平台 Lingqu API Platform）
+- 任何人可自由使用、修改、分发与商用，仅需保留版权声明与许可声明
+- 完整协议文本见 [LICENSE](LICENSE)
+
+GitHub：[https://github.com/Mitchll1214/lingQu](https://github.com/Mitchll1214/lingQu)
+

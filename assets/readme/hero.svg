@@ -23,7 +23,7 @@
   <!-- ============ 左侧标题区 ============ -->
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
     <text x="56" y="86" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
-          font-size="18" letter-spacing="3" fill="#8fc0ff">SQL → RESTFUL API · 低代码平台</text>
+          font-size="18" letter-spacing="3" fill="#8fc0ff">SQL → RESTful API · 低代码平台</text>
 
     <text x="56" y="152" font-size="56" font-weight="700" fill="#ffffff">灵渠 · 数据接口平台</text>
 

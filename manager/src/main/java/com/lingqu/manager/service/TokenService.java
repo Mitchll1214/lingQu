@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -82,6 +83,9 @@ public class TokenService {
         } else {
             List<String> permitted = permService.permittedProjectIds();
             if (permitted != null) {
+                if (permitted.isEmpty()) {
+                    return Collections.emptyList();
+                }
                 qw.in(Token::getProjectId, permitted);
             }
         }

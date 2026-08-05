@@ -14,6 +14,7 @@ import com.lingqu.manager.mapper.ProjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -46,6 +47,9 @@ public class ProjectService {
         // 普通用户仅可见有权限的项目
         List<String> permitted = permService.permittedProjectIds();
         if (permitted != null) {
+            if (permitted.isEmpty()) {
+                return new Page<>(page, size);
+            }
             qw.in(Project::getId, permitted);
         }
         qw.orderByDesc(Project::getUpdatedAt);
@@ -121,6 +125,9 @@ public class ProjectService {
         qw.eq(Project::getStatus, 1);
         List<String> permitted = permService.permittedProjectIds();
         if (permitted != null) {
+            if (permitted.isEmpty()) {
+                return Collections.emptyList();
+            }
             qw.in(Project::getId, permitted);
         }
         qw.orderByAsc(Project::getCode);

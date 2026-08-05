@@ -106,8 +106,11 @@ public class UserService {
         if (User.ROLE_ADMIN.equals(user.getRole()) || "admin".equals(user.getUsername())) {
             throw new BizException("管理员账号不可被重置，请通过环境变量 DEFAULT_ADMIN_PASS 修改");
         }
-        user.setPasswordHash(new BCryptPasswordEncoder().encode(DEFAULT_PASSWORD));
-        userMapper.updateById(user);
+        // 只更新密码字段，避免并发覆盖其他列（如 status）
+        User patch = new User();
+        patch.setId(userId);
+        patch.setPasswordHash(new BCryptPasswordEncoder().encode(DEFAULT_PASSWORD));
+        userMapper.updateById(patch);
     }
 
     /** 管理员启用/禁用用户（admin 账号受保护） */

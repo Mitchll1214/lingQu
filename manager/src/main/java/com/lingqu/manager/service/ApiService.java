@@ -44,6 +44,9 @@ public class ApiService {
             // 未指定项目：普通用户仅可见有权限项目的接口
             List<String> permitted = permService.permittedProjectIds();
             if (permitted != null) {
+                if (permitted.isEmpty()) {
+                    return new Page<>(page, size);
+                }
                 qw.in(Api::getProjectId, permitted);
             }
         }
@@ -81,6 +84,10 @@ public class ApiService {
      */
     public void update(Api api) {
         Api old = get(api.getId());
+        // 接口迁移到其他项目时，须对新项目也有权限（防越权覆盖他人接口）
+        if (api.getProjectId() != null && !api.getProjectId().equals(old.getProjectId())) {
+            permService.checkProjectPermission(api.getProjectId());
+        }
         validateBase(api);
         checkPathUnique(api.getProjectId(), api.getApiPath(), api.getId());
         if (old.getStatus() != null && old.getStatus() == Api.STATUS_ONLINE) {

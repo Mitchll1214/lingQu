@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,22 @@ public class DashboardService {
 
     public Map<String, Object> stats() {
         List<String> permitted = permService.permittedProjectIds();
+        // 普通用户未绑定任何项目：所有统计归零
+        if (permitted != null && permitted.isEmpty()) {
+            Map<String, Object> zero = new HashMap<>();
+            zero.put("projectTotal", 0);
+            zero.put("projectOnline", 0);
+            zero.put("apiTotal", 0);
+            zero.put("apiOnline", 0);
+            zero.put("datasourceTotal", 0);
+            zero.put("logToday", 0);
+            zero.put("topProjects", new ArrayList<>());
+            zero.put("datasourceHealthy", 0);
+            zero.put("trend", new ArrayList<>());
+            zero.put("topApis", new ArrayList<>());
+            zero.put("todayErrorRate", 0);
+            return zero;
+        }
         boolean limited = permitted != null;
 
         Map<String, Object> result = new HashMap<>();

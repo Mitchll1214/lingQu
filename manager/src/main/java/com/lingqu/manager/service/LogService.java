@@ -34,6 +34,9 @@ public class LogService {
         } else {
             List<String> permitted = permService.permittedProjectIds();
             if (permitted != null) {
+                if (permitted.isEmpty()) {
+                    return new Page<>(page, size);
+                }
                 qw.in(ApiLog::getProjectId, permitted);
             }
         }

@@ -63,6 +63,10 @@ public class TokenController {
         if (value == null || String.valueOf(value).isEmpty()) {
             return null;
         }
-        return LocalDateTime.parse(String.valueOf(value).replace('T', ' ').replaceFirst(" ", "T"));
+        try {
+            return LocalDateTime.parse(String.valueOf(value).replace('T', ' ').replaceFirst(" ", "T"));
+        } catch (Exception e) {
+            throw new com.lingqu.manager.common.BizException(400, "时间格式不正确，应为 yyyy-MM-dd HH:mm:ss");
+        }
     }
 }
